@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  rpa-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rpa-dashboard-app
+    ports:
+      - "8080:8080"
+    networks:
+      - default
+      - supabase_network
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://supabase-db:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=dtKlOHK6H0HOJnKRS8KUQQRM
+      - SPRING_DATASOURCE_DRIVER=org.postgresql.Driver
+      - SPRING_JPA_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+    restart: unless-stopped
+
+networks:
+  default:
+  supabase_network:
+    name: supabase_default
+    external: true
+

@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneProcess — Gestão de RPAs</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root {
+  --op-navy: #1a1464;
+  --op-blue: #2c2cb5;
+  --op-mid: #3d3dd4;
+  --op-light: #5f5fe8;
+  --op-lilac: #8888f5;
+  --op-pale: #b0b0fa;
+  --op-bg: #0d0c2b;
+  --op-bg2: #13123a;
+  --op-bg3: #1a1950;
+  --op-card: #181740;
+  --op-border: rgba(95,95,232,0.18);
+  --op-border2: rgba(95,95,232,0.35);
+  --op-text: #f0effe;
+  --op-muted: #9896d4;
+  --op-success: #22d397;
+  --op-warn: #f5c842;
+  --op-danger: #f56060;
+  --op-info: #60b8f5;
+  --op-admin: #e8a838;
+  --op-admin-bg: rgba(232,168,56,0.12);
+  --sidebar-w: 248px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'DM Sans',sans-serif;background:var(--op-bg);color:var(--op-text);min-height:100vh;}
+
+/* ── LOGIN SCREEN ── */
+.login-wrap{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(44,44,181,0.28) 0%, transparent 70%),
+              radial-gradient(ellipse 50% 40% at 80% 100%, rgba(26,20,100,0.4) 0%, transparent 60%),
+              var(--op-bg);
+}
+.login-box{
+  width:420px;
+  background:var(--op-card);
+  border:1px solid var(--op-border2);
+  border-radius:20px;
+  padding:40px 36px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.login-logo{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.login-logo svg {
+  width: 38px;
+  height: 38px;
+}
+.login-logo span {
+  font-family: 'Sora', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.login-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--op-muted);text-align:center;margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-label{font-size:11px;font-weight:600;color:var(--op-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.login-input-wrap{position:relative;}
+.login-input-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--op-muted);font-size:17px;pointer-events:none;}
+.login-input{
+  width:100%;
+  background:var(--op-bg3);
+  border:1px solid var(--op-border);
+  border-radius:10px;
+  padding:10px 12px 10px 38px;
+  font-size:14px;color:var(--op-text);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border 0.15s;
+}
+.login-input:focus{border-color:var(--op-light);box-shadow:0 0 0 3px rgba(95,95,232,0.18);}
+.login-input::placeholder{color:var(--op-muted);opacity:0.55;}
+.login-btn{
+  width:100%;margin-top:6px;
+  background:linear-gradient(135deg,var(--op-blue),var(--op-light));
+  color:#fff;border:none;border-radius:10px;
+  padding:12px;font-size:14px;font-weight:600;
+  font-family:'Sora',sans-serif;cursor:pointer;
+  box-shadow:0 4px 20px rgba(44,44,181,0.45);
+  transition:all 0.15s;
+}
+.login-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.login-error{
+  background:rgba(245,96,96,0.12);border:1px solid rgba(245,96,96,0.3);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:var(--op-danger);
+  margin-bottom:14px;display:none;
+}
+.login-hint{
+  margin-top:20px;padding-top:16px;border-top:1px solid var(--op-border);
+  font-size:12px;color:var(--op-muted);text-align:center;line-height:1.7;
+}
+.login-hint code{
+  background:var(--op-bg3);border:1px solid var(--op-border);
+  border-radius:4px;padding:1px 6px;font-size:11px;color:var(--op-pale);
+}
+
+/* ── APP SHELL ── */
+.app{display:none;min-height:100vh;}
+.sidebar{
+  width:var(--sidebar-w);min-height:100vh;
+  background:var(--op-bg2);border-right:1px solid var(--op-border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:100;
+}
+.sidebar-logo{
+  padding:24px 22px 18px;
+  border-bottom:1px solid var(--op-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-logo svg {
+  width: 28px;
+  height: 28px;
+}
+.sidebar-logo span {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.profile-chip{
+  margin:14px 12px 4px;
+  background:var(--op-bg3);border:1px solid var(--op-border);
+  border-radius:10px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px;
+}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;color:#fff;
+}
+.av-admin{background:linear-gradient(135deg,#b55a10,var(--op-admin));}
+.av-client{background:linear-gradient(135deg,var(--op-blue),var(--op-light));}
+.profile-name{font-size:13px;font-weight:500;line-height:1.2;}
+.profile-role{font-size:11px;margin-top:1px;}
+.role-admin{color:var(--op-admin);}
+.role-client{color:var(--op-lilac);}
+.sidebar-label{
+  font-size:10px;font-weight:700;letter-spacing:0.12em;color:var(--op-muted);
+  text-transform:uppercase;padding:16px 20px 6px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 18px;border-radius:8px;margin:2px 10px;
+  cursor:pointer;font-size:13.5px;font-weight:400;
+  color:var(--op-muted);transition:all 0.15s;
+  border:1px solid transparent;
+}
+.nav-item i{font-size:17px;flex-shrink:0;}
+.nav-item:hover{background:var(--op-bg3);color:var(--op-text);border-color:var(--op-border);}
+.nav-item.active{
+  background:linear-gradient(135deg,rgba(44,44,181,0.45),rgba(95,95,232,0.18));
+  color:#fff;border-color:var(--op-border2);font-weight:500;
+}
+.nav-item.active i{color:var(--op-lilac);}
+.nav-item.nav-admin.active{
+  background:linear-gradient(135deg,rgba(181,90,16,0.35),rgba(232,168,56,0.12));
+  border-color:rgba(232,168,56,0.35);
+}
+.nav-item.nav-admin.active i{color:var(--op-admin);}
+.sidebar-footer{margin-top:auto;padding:14px;border-top:1px solid var(--op-border);}
+.logout-btn{
+  width:100%;display:flex;align-items:center;gap:8px;
+  padding:9px 14px;border-radius:8px;
+  background:transparent;border:1px solid var(--op-border);
+  color:var(--op-muted);font-size:13px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.15s;
+}
+.logout-btn:hover{background:rgba(245,96,96,0.1);border-color:rgba(245,96,96,0.3);color:var(--op-danger);}
+.logout-btn i{font-size:16px;}
+
+/* ── TOPBAR ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;}
+.topbar{
+  height:60px;border-bottom:1px solid var(--op-border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;background:var(--op-bg2);
+  position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:600;}
+.topbar-sub{font-size:12px;color:var(--op-muted);margin-top:1px;}
+.topbar-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+}
+.tb-admin{background:var(--op-admin-bg);color:var(--op-admin);border:1px solid rgba(232,168,56,0.3);}
+.tb-client{background:rgba(95,95,232,0.15);color:var(--op-lilac);border:1px solid var(--op-border2);}
+
+/* ── CONTENT ── */
+.content{padding:28px 32px;flex:1;}
+.screen{display:none;animation:fadeUp 0.22s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ── SHARED COMPONENTS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;
+  cursor:pointer;border:none;transition:all 0.15s;font-family:'DM Sans',sans-serif;
+}
+.btn i{font-size:16px;}
+.btn-primary{
+  background:linear-gradient(135deg,var(--op-blue),var(--op-light));
+  color:#fff;box-shadow:0 2px 16px rgba(44,44,181,0.4);
+}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-admin{
+  background:linear-gradient(135deg,#9e4a0a,var(--op-admin));
+  color:#fff;box-shadow:0 2px 16px rgba(181,90,16,0.35);
+}
+.btn-admin:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-ghost{
+  background:transparent;color:var(--op-muted);
+  border:1px solid var(--op-border);
+}
+.btn-ghost:hover{background:var(--op-bg3);color:var(--op-text);border-color:var(--op-border2);}
+.btn-danger-ghost{
+  background:transparent;color:var(--op-danger);
+  border:1px solid rgba(245,96,96,0.3);
+}
+.btn-danger-ghost:hover{background:rgba(245,96,96,0.1);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-xs{padding:3px 8px;font-size:11px;}
+
+.section-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;}
+.section-h{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;}
+.section-sub{font-size:13px;color:var(--op-muted);margin-top:3px;}
+
+.card{background:var(--op-card);border:1px solid var(--op-border);border-radius:14px;padding:20px 24px;}
+.card-title{
+  font-family:'Sora',sans-serif;font-size:14px;font-weight:600;
+  color:var(--op-text);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title i{color:var(--op-lilac);font-size:18px;}
+.card-title .admin-icon{color:var(--op-admin);}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+
+.field{margin-bottom:14px;}
+.field-label{font-size:11px;font-weight:600;color:var(--op-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+input[type=text],input[type=email],input[type=password],select,textarea{
+  width:100%;background:var(--op-bg3);border:1px solid var(--op-border);
+  border-radius:8px;padding:9px 12px;font-size:13.5px;color:var(--op-text);
+  font-family:'DM Sans',sans-serif;outline:none;transition:border 0.15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--op-light);box-shadow:0 0 0 3px rgba(95,95,232,0.15);}
+input::placeholder,textarea::placeholder{color:var(--op-muted);opacity:0.55;}
+select option{background:var(--op-bg2);}
+textarea{resize:vertical;min-height:80px;}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:500;}
+.badge-success{background:rgba(34,211,151,0.15);color:var(--op-success);border:1px solid rgba(34,211,151,0.3);}
+.badge-warn{background:rgba(245,200,66,0.12);color:var(--op-warn);border:1px solid rgba(245,200,66,0.3);}
+.badge-danger{background:rgba(245,96,96,0.12);color:var(--op-danger);border:1px solid rgba(245,96,96,0.3);}
+.badge-info{background:rgba(96,184,245,0.12);color:var(--op-info);border:1px solid rgba(96,184,245,0.3);}
+.badge-admin{background:var(--op-admin-bg);color:var(--op-admin);border:1px solid rgba(232,168,56,0.3);}
+.badge i{font-size:12px;}
+
+.glow-dot{width:7px;height:7px;border-radius:50%;background:var(--op-success);box-shadow:0 0 6px var(--op-success);display:inline-block;margin-right:4px;}
+
+/* TABLE */
+.table-wrap{background:var(--op-card);border:1px solid var(--op-border);border-radius:14px;overflow:hidden;}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--op-border);}
+.table-title{font-family:'Sora',sans-serif;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:10.5px;color:var(--op-muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;padding:10px 16px;border-bottom:1px solid var(--op-border);}
+td{padding:11px 16px;border-bottom:1px solid rgba(95,95,232,0.08);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(95,95,232,0.05);}
+
+/* METRICS */
+.metric{background:var(--op-card);border:1px solid var(--op-border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.metric-total::before{background:linear-gradient(90deg,var(--op-blue),var(--op-light));}
+.metric-success::before{background:linear-gradient(90deg,#15c47a,#22d397);}
+.metric-danger::before{background:linear-gradient(90deg,#d63a3a,#f56060);}
+.metric-warn::before{background:linear-gradient(90deg,#d4a217,#f5c842);}
+.metric-admin::before{background:linear-gradient(90deg,#9e4a0a,var(--op-admin));}
+.metric-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px;}
+.metric-total .metric-icon{background:rgba(95,95,232,0.15);color:var(--op-lilac);}
+.metric-success .metric-icon{background:rgba(34,211,151,0.15);color:var(--op-success);}
+.metric-danger .metric-icon{background:rgba(245,96,96,0.15);color:var(--op-danger);}
+.metric-warn .metric-icon{background:rgba(245,200,66,0.12);color:var(--op-warn);}
+.metric-admin .metric-icon{background:var(--op-admin-bg);color:var(--op-admin);}
+.metric-num{font-family:'Sora',sans-serif;font-size:32px;font-weight:700;line-height:1;margin-bottom:4px;}
+.metric-lbl{font-size:12px;color:var(--op-muted);}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--op-border);}
+.toggle-row:last-of-type{border-bottom:none;}
+.toggle-info .title{font-size:13.5px;font-weight:500;}
+.toggle-info .sub{font-size:12px;color:var(--op-muted);margin-top:3px;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;margin-top:2px;}
+.toggle input{opacity:0;width:0;height:0;}
+.tslider{position:absolute;inset:0;background:var(--op-bg3);border-radius:24px;border:1px solid var(--op-border);transition:0.2s;cursor:pointer;}
+.tslider::before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--op-muted);border-radius:50%;transition:0.2s;}
+.toggle input:checked+.tslider{background:rgba(34,211,151,0.2);border-color:var(--op-success);}
+.toggle input:checked+.tslider::before{transform:translateX(20px);background:var(--op-success);}
+
+/* EMAIL TAGS */
+.email-tag{display:inline-flex;align-items:center;gap:6px;background:var(--op-bg3);border:1px solid var(--op-border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--op-text);margin:3px;}
+.email-tag .rm{cursor:pointer;color:var(--op-muted);font-size:14px;line-height:1;}
+.email-tag .rm:hover{color:var(--op-danger);}
+
+/* RPA LIST */
+.rpa-row{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(95,95,232,0.08);gap:14px;transition:background 0.15s;}
+.rpa-row:last-child{border-bottom:none;}
+.rpa-row:hover{background:rgba(95,95,232,0.06);}
+.rpa-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--op-blue),var(--op-light));display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0;}
+.rpa-icon.warn{background:linear-gradient(135deg,#b55a10,#d47a30);}
+
+/* CLIENT CARD */
+.client-card{
+  background:var(--op-card);border:1px solid var(--op-border);
+  border-radius:14px;padding:18px 20px;
+  transition:border-color 0.15s;cursor:pointer;
+}
+.client-card:hover{border-color:var(--op-border2);}
+.client-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.client-avatar{
+  width:42px;height:42px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.client-name{font-family:'Sora',sans-serif;font-size:14px;font-weight:600;}
+.client-meta{font-size:12px;color:var(--op-muted);margin-top:2px;}
+.client-stats{display:flex;gap:12px;padding-top:12px;border-top:1px solid var(--op-border);}
+.client-stat{flex:1;text-align:center;}
+.client-stat-num{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;}
+.client-stat-lbl{font-size:11px;color:var(--op-muted);margin-top:1px;}
+.client-actions{display:flex;gap:6px;margin-top:12px;}
+
+/* MODAL overlay */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(5,4,25,0.75);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--op-bg2);border:1px solid var(--op-border2);
+  border-radius:18px;padding:28px;width:520px;max-width:96vw;
+  box-shadow:0 24px 64px rgba(0,0,0,0.6);
+  animation:fadeUp 0.2s ease;
+}
+.modal-title{font-family:'Sora',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.modal-sub{font-size:13px;color:var(--op-muted);margin-bottom:20px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--op-border);}
+
+/* CREDENTIAL BOX */
+.cred-box{
+  background:var(--op-bg3);border:1px solid var(--op-border2);
+  border-radius:10px;padding:14px 16px;margin-top:12px;
+}
+.cred-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cred-row:last-child{margin-bottom:0;}
+.cred-label{font-size:11px;color:var(--op-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;}
+.cred-value{font-family:monospace;font-size:14px;color:var(--op-pale);background:var(--op-bg);padding:3px 10px;border-radius:6px;border:1px solid var(--op-border);}
+
+/* SEARCH */
+.search-wrap{position:relative;}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--op-muted);font-size:16px;pointer-events:none;}
+.search-wrap input{padding-left:34px;}
+
+hr{border:none;border-top:1px solid var(--op-border);margin:16px 0;}
+
+/* FILTER BAR */
+.filter-bar{background:var(--op-card);border:1px solid var(--op-border);border-radius:14px;padding:18px 20px;margin-bottom:20px;}
+.filter-title{font-size:11px;font-weight:600;color:var(--op-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN
+     ══════════════════════════════════════════ -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#opGradLogin)" />
+        <path d="M2 17L12 22L22 17" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M2 12L12 17L22 12" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <defs>
+          <linearGradient id="opGradLogin" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#5f5fe8" />
+            <stop offset="1" stop-color="#2c2cb5" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>OneProcess</span>
+    </div>
+    <div class="login-title">Bem-vindo de volta</div>
+    <div class="login-sub">Informe suas credenciais para acessar a plataforma</div>
+
+    <div class="login-error" id="login-error">
+      <i class="ti ti-alert-circle" style="vertical-align:-2px;margin-right:6px;"></i>
+      <span id="login-error-msg">Usuário ou senha incorretos. Tente novamente.</span>
+    </div>
+
+    <div class="login-field">
+      <div class="login-label">Usuário</div>
+      <div class="login-input-wrap">
+        <i class="ti ti-user"></i>
+        <input class="login-input" type="text" id="inp-user" placeholder="Digite seu usuário" autocomplete="off">
+      </div>
+    </div>
+    <div class="login-field">
+      <div class="login-label">Senha</div>
+      <div class="login-input-wrap">
+        <i class="ti ti-lock"></i>
+        <input class="login-input" type="password" id="inp-pass" placeholder="Digite sua senha" autocomplete="off">
+      </div>
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">
+      <i class="ti ti-login" style="vertical-align:-2px;margin-right:6px;"></i>
+      Entrar
+    </button>
+
+    <div class="login-hint">
+      <strong style="color:var(--op-pale);">Acesso administrativo OneProcess:</strong><br>
+      usuário <code>oneprocess</code> &nbsp;·&nbsp; senha <code>op2025</code><br><br>
+      <strong style="color:var(--op-pale);">Acesso cliente (semeado):</strong><br>
+      usuário <code>cliente_abc</code> &nbsp;·&nbsp; senha <code>abc123</code>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     APP
+     ══════════════════════════════════════════ -->
+<div class="app" id="app" style="display:none;">
+  <div style="display:flex;min-height:100vh;">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#opGradSidebar)" />
+          <path d="M2 17L12 22L22 17" stroke="url(#opGradSidebar)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M2 12L12 17L22 12" stroke="url(#opGradSidebar)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="opGradSidebar" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#5f5fe8" />
+              <stop offset="1" stop-color="#2c2cb5" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>OneProcess</span>
+      </div>
+
+      <div class="profile-chip" id="profile-chip">
+        <div class="avatar" id="profile-avatar">OP</div>
+        <div>
+          <div class="profile-name" id="profile-name">OneProcess</div>
+          <div class="profile-role" id="profile-role-label">Administrador</div>
+        </div>
+      </div>
+
+      <!-- ADMIN NAV -->
+      <div id="nav-admin">
+        <div class="sidebar-label">Administração</div>
+        <div class="nav-item nav-admin active" onclick="go('dash-admin')">
+          <i class="ti ti-layout-dashboard"></i> Dashboard
+        </div>
+        <div class="nav-item nav-admin" onclick="go('clientes')">
+          <i class="ti ti-building"></i> Clientes
+        </div>
+        <div class="nav-item nav-admin" onclick="go('rpas-admin')">
+          <i class="ti ti-robot"></i> Catalog RPAs
+        </div>
+        <div class="nav-item nav-admin" onclick="go('credenciais')">
+          <i class="ti ti-key"></i> Credenciais
+        </div>
+      </div>
+
+      <!-- CLIENT NAV -->
+      <div id="nav-client" style="display:none;">
+        <div class="sidebar-label">Menu</div>
+        <div class="nav-item active" onclick="go('meus-rpas')">
+          <i class="ti ti-robot"></i> Meus RPAs
+        </div>
+        <div class="nav-item" onclick="go('alertas')">
+          <i class="ti ti-bell"></i> Configurar Alertas
+        </div>
+        <div class="nav-item" onclick="go('resultados')">
+          <i class="ti ti-chart-bar"></i> Resultados
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="doLogout()">
+          <i class="ti ti-logout"></i> Sair da conta
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar" id="topbar">
+        <div>
+          <div class="topbar-title" id="topbar-title">Dashboard</div>
+          <div class="topbar-sub" id="topbar-sub">Visão geral da plataforma</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="topbar-badge" id="topbar-badge"><i class="ti ti-shield-check"></i> Admin OneProcess</span>
+          <button class="btn btn-admin btn-sm" id="btn-novo-top" onclick="abrirModalCliente()">
+            <i class="ti ti-plus"></i> Novo cliente
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ── ADMIN DASHBOARD ── -->
+        <div id="screen-dash-admin" class="screen active">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Dashboard geral</div>
+              <div class="section-sub">Visão consolidada de todos os clientes</div>
+            </div>
+            <button class="btn btn-admin" onclick="abrirModalCliente()"><i class="ti ti-plus"></i> Novo cliente</button>
+          </div>
+
+          <div class="grid4" style="margin-bottom:24px;">
+            <div class="metric metric-admin">
+              <div class="metric-icon"><i class="ti ti-building"></i></div>
+              <div class="metric-num" id="admin-m-clientes">0</div>
+              <div class="metric-lbl">Clientes ativos</div>
+            </div>
+            <div class="metric metric-total">
+              <div class="metric-icon"><i class="ti ti-robot"></i></div>
+              <div class="metric-num" id="admin-m-rpas">0</div>
+              <div class="metric-lbl">RPAs cadastrados</div>
+            </div>
+            <div class="metric metric-success">
+              <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+              <div class="metric-num" id="admin-m-ativos">0</div>
+              <div class="metric-lbl">RPAs ativos</div>
+            </div>
+            <div class="metric metric-warn">
+              <div class="metric-icon"><i class="ti ti-tool"></i></div>
+              <div class="metric-num" id="admin-m-manutencao">0</div>
+              <div class="metric-lbl">Em manutenção</div>
+            </div>
+          </div>
+
+          <div class="grid3" id="admin-clients-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- ── CLIENTES ── -->
+        <div id="screen-clientes" class="screen">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Clientes</div>
+              <div class="section-sub">Gerencie os clientes e seus acessos</div>
+            </div>
+            <button class="btn btn-admin" onclick="abrirModalCliente()"><i class="ti ti-plus"></i> Cadastrar cliente</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-building" style="color:var(--op-admin);"></i> Lista de clientes</div>
+            </div>
+            <table id="tbl-clientes">
+              <thead><tr>
+                <th>Empresa</th><th>Razão Social</th><th>CNPJ</th><th>Status</th><th>Ações</th>
+              </tr></thead>
+              <tbody>
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── RPAS ADMIN ── -->
+        <div id="screen-rpas-admin" class="screen">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Catalog RPAs</div>
+              <div class="section-sub">Todos os RPAs cadastrados na plataforma</div>
+            </div>
+            <button class="btn btn-admin" onclick="abrirModalRPA()"><i class="ti ti-plus"></i> Novo RPA</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-robot" style="color:var(--op-admin);"></i> Todos os RPAs</div>
+            </div>
+            <table id="tbl-rpas-admin">
+              <thead><tr>
+                <th>Nome do RPA</th><th>Cliente</th><th>Departamento</th><th>Status</th><th>Ações</th>
+              </tr></thead>
+              <tbody>
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── CREDENCIAIS ADMIN ── -->
+        <div id="screen-credenciais" class="screen">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Credenciais de acesso</div>
+              <div class="section-sub">Acessos dos robôs e usuários clientes</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-key" style="color:var(--op-admin);"></i> Logins dos clientes</div>
+            </div>
+            <table id="tbl-credenciais">
+              <thead><tr><th>Cliente</th><th>Username (Robot Client-ID)</th><th>Senha (JWT Secret Key)</th><th>Ações</th></tr></thead>
+              <tbody>
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ CLIENT SCREENS ══ -->
+
+        <!-- ── MEUS RPAs (CLIENT) ── -->
+        <div id="screen-meus-rpas" class="screen">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Meus RPAs</div>
+              <div class="section-sub" id="client-company-sub">Automações ativas</div>
+            </div>
+          </div>
+          <div class="grid4" style="margin-bottom:20px;">
+            <div class="metric metric-total"><div class="metric-icon"><i class="ti ti-robot"></i></div><div class="metric-num" id="client-m-total">0</div><div class="metric-lbl">Cadastrados</div></div>
+            <div class="metric metric-success"><div class="metric-icon"><i class="ti ti-circle-check"></i></div><div class="metric-num" id="client-m-ativos">0</div><div class="metric-lbl">Ativos</div></div>
+            <div class="metric metric-warn"><div class="metric-icon"><i class="ti ti-tool"></i></div><div class="metric-num" id="client-m-manutencao">0</div><div class="metric-lbl">Em manutenção</div></div>
+            <div class="metric metric-danger"><div class="metric-icon"><i class="ti ti-x"></i></div><div class="metric-num" id="client-m-inativos">0</div><div class="metric-lbl">Inativos</div></div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header"><div class="table-title"><i class="ti ti-list" style="color:var(--op-lilac);"></i>Lista de RPAs</div></div>
+            <div id="client-rpa-list-rows">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ALERTAS (CLIENT) ── -->
+        <div id="screen-alertas" class="screen">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Configurar Alertas</div>
+              <div class="section-sub">Defina os disparos de e-mail por RPA em caso de erro</div>
+            </div>
+            <select id="alert-rpa-select" style="width:auto;min-width:240px;" onchange="loadAlertsForSelectedRpa()">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div style="max-width:700px;">
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-title"><i class="ti ti-mail-forward"></i>Lista de Contatos de Alerta</div>
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <div class="title">Ativar alertas de e-mail</div>
+                  <div class="sub">Se ativado, envia alertas imediatos aos emails configurados caso uma subtask falhe.</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" checked>
+                  <span class="tslider"></span>
+                </label>
+              </div>
+              <div style="margin-top:16px; margin-bottom:16px;">
+                <div class="field-label">Destinatários configurados</div>
+                <div id="alert-email-tags" style="min-height:50px; padding:10px; border: 1px solid var(--op-border); border-radius:8px; background:var(--op-bg2); margin-bottom:10px;">
+                  <!-- Dynamic tags -->
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="email" id="inp-alert-email" placeholder="Adicionar e-mail (ex: suporte@empresa.com)" style="flex:1;">
+                  <button class="btn btn-ghost btn-sm" onclick="addAlertEmailTag()"><i class="ti ti-plus"></i></button>
+                </div>
+              </div>
+              <hr>
+              <div style="display:flex;justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="saveRpaAlerts()"><i class="ti ti-device-floppy"></i> Salvar Configurações</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RESULTADOS (CLIENT) ── -->
+        <div id="screen-resultados" class="screen">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Resultados</div>
+              <div class="section-sub">Execuções e desempenho analítico dos seus RPAs</div>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-title"><i class="ti ti-filter"></i>Filtros de Execução</div>
+            <div class="grid3" style="margin-bottom:14px;">
+              <div class="field" style="margin-bottom:0;">
+                <div class="field-label">RPA</div>
+                <select id="filter-rpa">
+                  <option value="">Todos</option>
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <div class="field-label">Resultado</div>
+                <select id="filter-status">
+                  <option value="Todos">Todos</option>
+                  <option value="Sucesso">Sucesso</option>
+                  <option value="Inconsistência">Inconsistência</option>
+                  <option value="Erro">Erro</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0; display:flex; align-items:flex-end;">
+                <button class="btn btn-primary" onclick="loadExecutions()" style="width:100%;"><i class="ti ti-search"></i> Filtrar</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid4" style="margin-bottom:20px;">
+            <div class="metric metric-total"><div class="metric-icon"><i class="ti ti-refresh"></i></div><div class="metric-num" id="res-m-total">0</div><div class="metric-lbl">Transações realizadas</div></div>
+            <div class="metric metric-success"><div class="metric-icon"><i class="ti ti-circle-check"></i></div><div class="metric-num" id="res-m-sucesso">0</div><div class="metric-lbl">Sucessos</div></div>
+            <div class="metric metric-danger"><div class="metric-icon"><i class="ti ti-alert-circle"></i></div><div class="metric-num" id="res-m-erro">0</div><div class="metric-lbl">Falhas/Erros</div></div>
+            <div class="metric metric-warn"><div class="metric-icon"><i class="ti ti-percentage"></i></div><div class="metric-num" id="res-m-taxa">100%</div><div class="metric-lbl">Taxa de sucesso</div></div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="table-header"><div class="table-title"><i class="ti ti-table" style="color:var(--op-lilac);"></i>Analítico de Subtasks (Tempo Real)</div></div>
+            <table id="tbl-resultados">
+              <thead><tr><th>Data Execução</th><th>RPA</th><th>Documento / ID</th><th>Mensagem de Retorno</th><th>Status</th></tr></thead>
+              <tbody>
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div>
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════
+     MODALS
+     ══════════════════════════════════════════ -->
+
+<!-- MODAL: NOVO CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-title"><i class="ti ti-building" style="color:var(--op-admin);"></i>Cadastrar novo cliente</div>
+    <div class="modal-sub">Crie a empresa cliente e defina suas credenciais administrativas</div>
+    <div class="grid2">
+      <div class="field"><div class="field-label">Nome da empresa *</div><input type="text" id="m-cli-nome" placeholder="Ex: ABC Indústria Ltda"></div>
+      <div class="field"><div class="field-label">Responsável *</div><input type="text" id="m-cli-resp" placeholder="Nome do contato"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><div class="field-label">Razão Social</div><input type="text" id="m-cli-razao" placeholder="Razão Social completa"></div>
+      <div class="field"><div class="field-label">CNPJ</div><input type="text" id="m-cli-cnpj" placeholder="12.345.678/0001-00"></div>
+    </div>
+    <hr>
+    <div style="font-size:12px;font-weight:600;color:var(--op-admin);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;"><i class="ti ti-key" style="vertical-align:-2px;margin-right:5px;"></i>Credenciais de acesso</div>
+    <div class="grid2">
+      <div class="field"><div class="field-label">Login (Username) *</div><input type="text" id="m-cli-username" placeholder="Ex: cliente_nomeempresa"></div>
+      <div class="field"><div class="field-label">Senha *</div><input type="password" id="m-cli-password" placeholder="Defina uma senha"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-admin" onclick="submitClient()"><i class="ti ti-device-floppy"></i> Salvar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVO RPA -->
+<div class="modal-overlay" id="modal-rpa">
+  <div class="modal">
+    <div class="modal-title"><i class="ti ti-robot" style="color:var(--op-admin);"></i>Cadastrar RPA</div>
+    <div class="modal-sub">Registre um novo robô vinculado a um cliente</div>
+    <div class="field">
+      <div class="field-label">Cliente Proprietário *</div>
+      <select id="m-rpa-cliente">
+        <!-- Dynamically populated with clients -->
+      </select>
+    </div>
+    <div class="grid2">
+      <div class="field"><div class="field-label">Nome do RPA *</div><input type="text" id="m-rpa-nome" placeholder="Ex: Conciliação Fiscal"></div>
+      <div class="field"><div class="field-label">Departamento</div><input type="text" id="m-rpa-dep" placeholder="Ex: Financeiro"></div>
+    </div>
+    <div class="field"><div class="field-label">Regras de Negócio</div><textarea id="m-rpa-regras" placeholder="Descreva o passo a passo que o robô executa..."></textarea></div>
+    <div class="field" style="margin-bottom:0;"><div class="field-label">Riscos mapeados</div><textarea id="m-rpa-riscos" placeholder="Riscos operacionais catalogados..." style="min-height:60px;"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-rpa')">Cancelar</button>
+      <button class="btn btn-admin" onclick="submitRpa()"><i class="ti ti-device-floppy"></i> Salvar RPA</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CREDENCIAIS -->
+<div class="modal-overlay" id="modal-cred">
+  <div class="modal" style="width:440px;">
+    <div class="modal-title"><i class="ti ti-key" style="color:var(--op-admin);"></i>Credenciais de acesso</div>
+    <div class="modal-sub" id="cred-modal-sub">Detalhamento para conexão do robô Java</div>
+    <div class="cred-box">
+      <div class="cred-row"><span class="cred-label">Empresa</span><span class="cred-value" id="cred-empresa">—</span></div>
+      <div class="cred-row"><span class="cred-label">Client Username</span><span class="cred-value" id="cred-user">—</span></div>
+      <div class="cred-row"><span class="cred-label">Client Password</span><span class="cred-value" id="cred-pass">—</span></div>
+      <div class="cred-row"><span class="cred-label">API Gateway Url</span><span class="cred-value" style="font-size:11px;" id="cred-url">http://localhost:8080/api</span></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="copyCredentials()"><i class="ti ti-copy"></i> Copiar dados</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-cred')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── AUTHENTICATED SESSION ──
+let session = null;
+let currentAlertEmails = [];
+let currentAlertRpaId = null;
+
+// On load, check if session already exists
+window.onload = function() {
+  const cached = sessionStorage.getItem("op_session");
+  if (cached) {
+    session = JSON.parse(cached);
+    bootstrapApp();
+  }
+};
+
+function doLogin() {
+  const user = document.getElementById('inp-user').value.trim();
+  const pass = document.getElementById('inp-pass').value.trim();
+  const err = document.getElementById('login-error');
+
+  if (!user || !pass) {
+    err.style.display = 'block';
+    document.getElementById('login-error-msg').textContent = "Preencha usuário e senha.";
+    return;
+  }
+
+  fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: user, password: pass })
+  })
+  .then(res => {
+    if (!res.ok) {
+      throw new Error("Credenciais inválidas");
+    }
+    return res.json();
+  })
+  .then(data => {
+    session = data;
+    sessionStorage.setItem("op_session", JSON.stringify(session));
+    err.style.display = 'none';
+    bootstrapApp();
+  })
+  .catch(e => {
+    err.style.display = 'block';
+    document.getElementById('login-error-msg').textContent = "Usuário ou senha incorretos. Tente novamente.";
+  });
+}
+
+document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('inp-user').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  session = null;
+  sessionStorage.removeItem("op_session");
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+}
+
+function bootstrapApp() {
+  document.getElementById('login-wrap').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'block';
+
+  // profile chip
+  const av = document.getElementById('profile-avatar');
+  av.textContent = session.nome.substring(0,2).toUpperCase();
+  av.className = 'avatar ' + (session.role === 'admin' ? 'av-admin' : 'av-client');
+  document.getElementById('profile-name').textContent = session.nome + ' ' + (session.sobrenome || '');
+  
+  const roleLabel = document.getElementById('profile-role-label');
+  roleLabel.textContent = session.role === 'admin' ? 'Administrador' : 'Cliente';
+  roleLabel.className = 'profile-role ' + (session.role === 'admin' ? 'role-admin' : 'role-client');
+
+  // navigation panels
+  document.getElementById('nav-admin').style.display = session.role === 'admin' ? 'block' : 'none';
+  document.getElementById('nav-client').style.display = session.role === 'client' ? 'block' : 'none';
+
+  // topbar info
+  const tb = document.getElementById('topbar-badge');
+  const btnNovo = document.getElementById('btn-novo-top');
+  if (session.role === 'admin') {
+    tb.className = 'topbar-badge tb-admin';
+    tb.innerHTML = '<i class="ti ti-shield-check"></i> Admin OneProcess';
+    btnNovo.style.display = 'inline-flex';
+    go('dash-admin');
+  } else {
+    tb.className = 'topbar-badge tb-client';
+    tb.innerHTML = '<i class="ti ti-building"></i> ' + session.companyName;
+    btnNovo.style.display = 'none';
+    document.getElementById('client-company-sub').textContent = session.companyName + ' — automações multi-tenant';
+    go('meus-rpas');
+  }
+}
+
+// ── SCREEN ROUTER ──
+const SCREEN_TITLES = {
+  'dash-admin': ['Dashboard','Visão geral consolidada dos clientes'],
+  'clientes':   ['Clientes','Empresas cadastradas no ecossistema'],
+  'rpas-admin': ['Catalog RPAs','Parques de robôs cadastrados por cliente'],
+  'credenciais':['Credenciais','Dados de integração dos robôs'],
+  'meus-rpas':  ['Meus RPAs','Desempenho dos robôs ativos'],
+  'alertas':    ['Configurar Alertas','Contatos de notificação de erros'],
+  'resultados': ['Resultados','Execuções e histórico em tempo real'],
+};
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  const s = document.getElementById('screen-' + id);
+  if(s) s.classList.add('active');
+  
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const oc = n.getAttribute('onclick') || '';
+    if(oc.includes("'"+id+"'")) n.classList.add('active');
+  });
+
+  if(SCREEN_TITLES[id]) {
+    document.getElementById('topbar-title').textContent = SCREEN_TITLES[id][0];
+    document.getElementById('topbar-sub').textContent = SCREEN_TITLES[id][1];
+  }
+
+  // update topbar add button action
+  const btnNovo = document.getElementById('btn-novo-top');
+  if(session.role === 'admin') {
+    if(id === 'clientes') { btnNovo.innerHTML = '<i class="ti ti-plus"></i> Novo cliente'; btnNovo.onclick = abrirModalCliente; }
+    else if(id === 'rpas-admin') { btnNovo.innerHTML = '<i class="ti ti-plus"></i> Novo RPA'; btnNovo.onclick = abrirModalRPA; }
+    else { btnNovo.innerHTML = '<i class="ti ti-plus"></i> Novo cliente'; btnNovo.onclick = abrirModalCliente; }
+  }
+
+  // fetch data dynamically based on view loaded
+  if (id === 'dash-admin') loadAdminDashboard();
+  else if (id === 'clientes') loadClientes();
+  else if (id === 'rpas-admin') loadRpasAdmin();
+  else if (id === 'credenciais') loadCredenciais();
+  else if (id === 'meus-rpas') loadClientDashboard();
+  else if (id === 'alertas') loadAlertasView();
+  else if (id === 'resultados') loadResultadosView();
+}
+
+// ── DATA FETCHERS ──
+
+function loadAdminDashboard() {
+  fetch('/api/dashboard/admin')
+    .antigravityJson()
+    .then(data => {
+      document.getElementById('admin-m-clientes').textContent = data.totalClientes;
+      document.getElementById('admin-m-rpas').textContent = data.totalRpas;
+      document.getElementById('admin-m-ativos').textContent = data.rpasAtivos;
+      document.getElementById('admin-m-manutencao').textContent = data.rpasManutencao;
+
+      const grid = document.getElementById('admin-clients-grid');
+      grid.innerHTML = '';
+      data.clientStats.forEach(c => {
+        const char = c.nome.substring(0, 2).toUpperCase();
+        const card = document.createElement('div');
+        card.className = 'client-card';
+        card.onclick = () => {
+          session.role = 'client'; // simulate client view
+          session.clientId = c.id;
+          session.companyName = c.nome;
+          bootstrapApp();
+        };
+        card.innerHTML = `
+          <div class="client-card-header">
+            <div class="client-avatar" style="background:linear-gradient(135deg,#1a6eb5,#3d9fd4);">${char}</div>
+            <div>
+              <div class="client-name">${c.nome}</div>
+              <div class="client-meta">${c.username} · ${c.rpaCount} RPAs</div>
+            </div>
+            <span class="badge ${c.status === 'Ativo' ? 'badge-success' : 'badge-warn'}" style="margin-left:auto;">
+              ${c.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : '<i class="ti ti-tool"></i>Manutenção'}
+            </span>
+          </div>
+          <div class="client-stats">
+            <div class="client-stat">
+              <div class="client-stat-num" style="color:var(--op-lilac);">${c.rpaCount}</div>
+              <div class="client-stat-lbl">RPAs</div>
+            </div>
+            <div class="client-stat">
+              <div class="client-stat-num" style="color:var(--op-success);">${c.executions}</div>
+              <div class="client-stat-lbl">Execuções</div>
+            </div>
+            <div class="client-stat">
+              <div class="client-stat-num" style="color:${c.successRate >= 90 ? 'var(--op-success)' : 'var(--op-warn)'};">${c.successRate}%</div>
+              <div class="client-stat-lbl">Sucesso</div>
+            </div>
+          </div>
+          <div class="client-actions">
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation(); abrirModalRPA()"><i class="ti ti-robot"></i> Add RPA</button>
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation(); abrirModalCred('${c.nome}', '${c.username}', 'abc123')"><i class="ti ti-key"></i> Credenciais</button>
+            <button class="btn btn-danger-ghost btn-xs" onclick="event.stopPropagation(); deleteCliente('${c.id}')"><i class="ti ti-trash"></i></button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    });
+}
+
+function loadClientes() {
+  fetch('/api/clientes')
+    .antigravityJson()
+    .then(data => {
+      const tbody = document.querySelector('#tbl-clientes tbody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--op-muted);">Nenhum cliente cadastrado.</td></tr>`;
+        return;
+      }
+      data.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${c.nome}</strong></td>
+          <td>${c.razaoSocial || '—'}</td>
+          <td><code>${c.cnpj || '—'}</code></td>
+          <td><span class="badge badge-success"><span class="glow-dot"></span>Ativo</span></td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-xs" onclick="abrirModalCred('${c.nome}', 'cliente_${c.nome.toLowerCase().replaceAll("[^a-z0-9]", "")}', 'abc123')"><i class="ti ti-key"></i></button>
+              <button class="btn btn-danger-ghost btn-xs" onclick="deleteCliente('${c.id}')"><i class="ti ti-trash"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+function loadRpasAdmin() {
+  fetch('/api/rpas')
+    .antigravityJson()
+    .then(data => {
+      const tbody = document.querySelector('#tbl-rpas-admin tbody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--op-muted);">Nenhum RPA cadastrado.</td></tr>`;
+        return;
+      }
+      data.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${r.nome}</strong></td>
+          <td><span class="badge badge-info">${r.cliente.nome}</span></td>
+          <td>${r.departamento || '—'}</td>
+          <td><span class="badge ${r.status === 'Ativo' ? 'badge-success' : (r.status === 'Inativo' ? 'badge-danger' : 'badge-warn')}">${r.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : r.status}</span></td>
+          <td>
+            <button class="btn btn-danger-ghost btn-xs" onclick="deleteRpa('${r.id}')"><i class="ti ti-trash"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+function loadCredenciais() {
+  fetch('/api/clientes')
+    .antigravityJson()
+    .then(data => {
+      const tbody = document.querySelector('#tbl-credenciais tbody');
+      tbody.innerHTML = '';
+      data.forEach(c => {
+        const user = 'cliente_' + c.nome.toLowerCase().replaceAll("[^a-z0-9]", "");
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${c.nome}</strong></td>
+          <td><code style="background:var(--op-bg3);padding:2px 8px;border-radius:4px;font-size:12px;">${user}</code></td>
+          <td><code style="background:var(--op-bg3);padding:2px 8px;border-radius:4px;font-size:12px;">abc123</code></td>
+          <td>
+            <button class="btn btn-ghost btn-xs" onclick="abrirModalCred('${c.nome}', '${user}', 'abc123')"><i class="ti ti-send"></i> Mostrar dados de conexão</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+function loadClientDashboard() {
+  fetch(`/api/dashboard/client/${session.clientId}`)
+    .antigravityJson()
+    .then(data => {
+      document.getElementById('client-m-total').textContent = data.totalRpas;
+      document.getElementById('client-m-ativos').textContent = data.rpasAtivos;
+      document.getElementById('client-m-manutencao').textContent = data.rpasManutencao;
+      document.getElementById('client-m-inativos').textContent = data.rpasInativos;
+
+      const rows = document.getElementById('client-rpa-list-rows');
+      rows.innerHTML = '';
+      if (data.rpas.length === 0) {
+        rows.innerHTML = `<div style="padding:20px;text-align:center;color:var(--op-muted);">Nenhum robô cadastrado para sua empresa.</div>`;
+        return;
+      }
+      data.rpas.forEach(r => {
+        const icon = r.status === 'Em Manutenção' ? 'warn' : '';
+        const rIcon = r.nome.includes('Fiscal') || r.nome.includes('NF') ? 'ti-file-invoice' : (r.nome.includes('Boleto') ? 'ti-receipt' : 'ti-shopping-cart');
+        const row = document.createElement('div');
+        row.className = 'rpa-row';
+        row.innerHTML = `
+          <div class="rpa-icon ${icon}"><i class="ti ${rIcon}"></i></div>
+          <div>
+            <div style="font-weight:500;font-size:13.5px;">${r.nome}</div>
+            <div style="font-size:12px;color:var(--op-muted);">${r.departamento || 'Geral'} · ${r.descricao || 'Sem descrição'}</div>
+          </div>
+          <span class="badge ${r.status === 'Ativo' ? 'badge-success' : (r.status === 'Inativo' ? 'badge-danger' : 'badge-warn')}" style="margin-left:auto;margin-right:12px;">
+            ${r.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : r.status}
+          </span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="go('alertas')"><i class="ti ti-bell"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="go('resultados')"><i class="ti ti-chart-bar"></i></button>
+          </div>
+        `;
+        rows.appendChild(row);
+      });
+    });
+}
+
+function loadAlertasView() {
+  fetch(`/api/rpas?clientId=${session.clientId}`)
+    .antigravityJson()
+    .then(rpas => {
+      const select = document.getElementById('alert-rpa-select');
+      select.innerHTML = '';
+      rpas.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.nome;
+        select.appendChild(opt);
+      });
+      loadAlertsForSelectedRpa();
+    });
+}
+
+function loadAlertsForSelectedRpa() {
+  const rpaId = document.getElementById('alert-rpa-select').value;
+  if (!rpaId) return;
+  currentAlertRpaId = rpaId;
+
+  fetch(`/api/rpas?clientId=${session.clientId}`)
+    .antigravityJson()
+    .then(rpas => {
+      const rpa = rpas.find(r => r.id === rpaId);
+      if (rpa) {
+        currentAlertEmails = rpa.emailsAlerta || [];
+        renderEmailTags();
+      }
+    });
+}
+
+function renderEmailTags() {
+  const container = document.getElementById('alert-email-tags');
+  container.innerHTML = '';
+  if (currentAlertEmails.length === 0) {
+    container.innerHTML = `<span style="font-size:12px;color:var(--op-muted);">Nenhum email cadastrado.</span>`;
+    return;
+  }
+  currentAlertEmails.forEach((email, idx) => {
+    const tag = document.createElement('span');
+    tag.className = 'email-tag';
+    tag.innerHTML = `<i class="ti ti-mail" style="font-size:13px;color:var(--op-lilac);"></i>${email}<span class="rm" onclick="removeAlertEmailTag(${idx})">×</span>`;
+    container.appendChild(tag);
+  });
+}
+
+function addAlertEmailTag() {
+  const inp = document.getElementById('inp-alert-email');
+  const email = inp.value.trim();
+  if (email && email.includes('@') && !currentAlertEmails.includes(email)) {
+    currentAlertEmails.push(email);
+    renderEmailTags();
+    inp.value = '';
+  }
+}
+
+function removeAlertEmailTag(idx) {
+  currentAlertEmails.splice(idx, 1);
+  renderEmailTags();
+}
+
+function saveRpaAlerts() {
+  if (!currentAlertRpaId) return;
+  fetch(`/api/rpas/${currentAlertRpaId}/alertas`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(currentAlertEmails)
+  })
+  .then(res => {
+    if (res.ok) alert("Configurações de alerta salvas!");
+  });
+}
+
+function loadResultadosView() {
+  // Populate RPA filter dropdown
+  fetch(`/api/rpas?clientId=${session.role === 'admin' ? '' : session.clientId}`)
+    .antigravityJson()
+    .then(rpas => {
+      const filter = document.getElementById('filter-rpa');
+      filter.innerHTML = '<option value="">Todos</option>';
+      rpas.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.nome;
+        filter.appendChild(opt);
+      });
+      loadExecutions();
+    });
+}
+
+function loadExecutions() {
+  const rpaId = document.getElementById('filter-rpa').value;
+  const status = document.getElementById('filter-status').value;
+  
+  let url = '/api/resultados?';
+  if (!session.role === 'admin') url += `clientId=${session.clientId}&`;
+  if (rpaId) url += `rpaId=${rpaId}&`;
+  if (status && status !== 'Todos') url += `status=${status}&`;
+
+  fetch(url)
+    .antigravityJson()
+    .then(data => {
+      const tbody = document.querySelector('#tbl-resultados tbody');
+      tbody.innerHTML = '';
+
+      let total = data.length;
+      let sucesso = data.filter(s => s.status === 'Sucesso').length;
+      let erro = total - sucesso;
+      let taxa = total > 0 ? Math.round((sucesso / total) * 100) : 100;
+
+      document.getElementById('res-m-total').textContent = total;
+      document.getElementById('res-m-sucesso').textContent = sucesso;
+      document.getElementById('res-m-erro').textContent = erro;
+      document.getElementById('res-m-taxa').textContent = taxa + '%';
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--op-muted);">Nenhuma execução registrada para os filtros selecionados.</td></tr>`;
+        return;
+      }
+
+      data.forEach(s => {
+        const tr = document.createElement('tr');
+        const dtStr = new Date(s.dataExecucao).toLocaleString('pt-BR');
+        
+        let badge = 'badge-success';
+        let icon = 'ti-check';
+        if (s.status === 'Erro') { badge = 'badge-warn'; icon = 'ti-clock'; }
+        else if (s.status === 'Inconsistência') { badge = 'badge-danger'; icon = 'ti-x'; }
+
+        tr.innerHTML = `
+          <td style="color:var(--op-muted);">${dtStr}</td>
+          <td><span class="badge badge-info">${s.rpaNome}</span></td>
+          <td><strong>${s.numeroDocumento}</strong></td>
+          <td>${s.mensagemOnde} (Valor: R$ ${s.valor.toFixed(2)} / Forn: ${s.fornecedor})</td>
+          <td><span class="badge ${badge}"><i class="ti ${icon}"></i>${s.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+// ── CRUD SUBMISSIONS ──
+
+function submitClient() {
+  const nome = document.getElementById('m-cli-nome').value.trim();
+  const resp = document.getElementById('m-cli-resp').value.trim();
+  const razao = document.getElementById('m-cli-razao').value.trim();
+  const cnpj = document.getElementById('m-cli-cnpj').value.trim();
+  const user = document.getElementById('m-cli-username').value.trim();
+  const pass = document.getElementById('m-cli-password').value.trim();
+
+  if(!nome || !resp || !user || !pass) {
+    alert("Por favor, preencha todos os campos obrigatórios (*).");
+    return;
+  }
+
+  fetch('/api/clientes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nome: nome,
+      razaoSocial: razao,
+      cnpj: cnpj,
+      responsavel: resp,
+      username: user,
+      password: pass
+    })
+  })
+  .then(res => {
+    if(res.ok) {
+      fecharModal('modal-cliente');
+      // clear fields
+      document.getElementById('m-cli-nome').value = '';
+      document.getElementById('m-cli-resp').value = '';
+      document.getElementById('m-cli-razao').value = '';
+      document.getElementById('m-cli-cnpj').value = '';
+      document.getElementById('m-cli-username').value = '';
+      document.getElementById('m-cli-password').value = '';
+      
+      loadAdminDashboard();
+      loadClientes();
+    } else {
+      alert("Erro ao criar cliente.");
+    }
+  });
+}
+
+function submitRpa() {
+  const clientId = document.getElementById('m-rpa-cliente').value;
+  const nome = document.getElementById('m-rpa-nome').value.trim();
+  const dep = document.getElementById('m-rpa-dep').value.trim();
+  const regras = document.getElementById('m-rpa-regras').value.trim();
+  const riscos = document.getElementById('m-rpa-riscos').value.trim();
+
+  if(!clientId || !nome) {
+    alert("Selecione o cliente e preencha o nome do RPA.");
+    return;
+  }
+
+  fetch('/api/rpas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      clientId: clientId,
+      nome: nome,
+      departamento: dep,
+      status: 'Ativo',
+      regras: regras,
+      riscos: riscos
+    })
+  })
+  .then(res => {
+    if(res.ok) {
+      fecharModal('modal-rpa');
+      document.getElementById('m-rpa-nome').value = '';
+      document.getElementById('m-rpa-dep').value = '';
+      document.getElementById('m-rpa-regras').value = '';
+      document.getElementById('m-rpa-riscos').value = '';
+
+      loadAdminDashboard();
+      loadRpasAdmin();
+    } else {
+      alert("Erro ao cadastrar RPA.");
+    }
+  });
+}
+
+function deleteCliente(id) {
+  if (confirm("Tem certeza que deseja remover este cliente? Todos os RPAs vinculados serão perdidos.")) {
+    fetch(`/api/clientes/${id}`, { method: 'DELETE' })
+      .then(res => {
+        if(res.ok) {
+          loadAdminDashboard();
+          loadClientes();
+        }
+      });
+  }
+}
+
+function deleteRpa(id) {
+  if (confirm("Deseja remover este robô do catálogo?")) {
+    fetch(`/api/rpas/${id}`, { method: 'DELETE' })
+      .then(res => {
+        if (res.ok) {
+          loadAdminDashboard();
+          loadRpasAdmin();
+        }
+      });
+  }
+}
+
+// Helper to load client dropdown in the RPA creation modal
+function loadClientDropdown() {
+  fetch('/api/clientes')
+    .antigravityJson()
+    .then(data => {
+      const select = document.getElementById('m-rpa-cliente');
+      select.innerHTML = '<option value="">Selecione o cliente...</option>';
+      data.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.nome;
+        select.appendChild(opt);
+      });
+    });
+}
+
+// Helper fetch extension
+Response.prototype.antigravityJson = function() {
+  return this.json().catch(() => ({}));
+};
+
+// ── MODALS ──
+function abrirModalCliente() { document.getElementById('modal-cliente').classList.add('open'); }
+function abrirModalRPA()     { loadClientDropdown(); document.getElementById('modal-rpa').classList.add('open'); }
+function abrirModalCred(empresa, user, pass) {
+  document.getElementById('cred-empresa').textContent = empresa;
+  document.getElementById('cred-user').textContent = user;
+  document.getElementById('cred-pass').textContent = pass;
+  document.getElementById('modal-cred').classList.add('open');
+}
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('open'); });
+});
+
+function copyCredentials() {
+  const company = document.getElementById('cred-empresa').textContent;
+  const user = document.getElementById('cred-user').textContent;
+  const pass = document.getElementById('cred-pass').textContent;
+  const url = document.getElementById('cred-url').textContent;
+  
+  const text = `Cliente: ${company}\nUsername (Webhook ID): ${user}\nPassword (Secret): ${pass}\nWebhook Endpoint: ${url}`;
+  navigator.clipboard.writeText(text).then(() => alert("Dados de conexão copiados para a área de transferência!"));
+}
+</script>
+</body>
+</html>

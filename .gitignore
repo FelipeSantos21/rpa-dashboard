@@ -1,0 +1,41 @@
+# Maven build outputs
+target/
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# Log and crash files
+*.log
+logs/
+crash.txt
+
+# OS and temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.swp
