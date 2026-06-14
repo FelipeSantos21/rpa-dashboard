@@ -38,13 +38,10 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Clear existing data to ensure a clean, idempotent seed on local PostgreSQL
-        vinculoClienteUsuarioRepository.deleteAllInBatch();
-        rpaSubtaskRepository.deleteAllInBatch();
-        rpaTaskRepository.deleteAllInBatch();
-        cadastroRpaRepository.deleteAllInBatch();
-        clienteRepository.deleteAllInBatch();
-        usuarioPerfilRepository.deleteAllInBatch();
+        // Check if database has already been seeded or has data
+        if (usuarioPerfilRepository.count() > 0 || clienteRepository.count() > 0) {
+            return;
+        }
 
         // 1. Create Clients (Tenants)
         Cliente abc = Cliente.builder()
