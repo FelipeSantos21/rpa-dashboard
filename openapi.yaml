@@ -1,0 +1,632 @@
+openapi: 3.0.3
+info:
+  title: OneProcess RPA Multi-Tenant Management Platform API
+  description: API endpoints for managing clients, RPAs, telemetry tasks, and execution logs in the OneProcess RPA Ecosystem.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /api/auth/login:
+    post:
+      summary: User Login
+      description: Authenticates a user (admin or client) and returns session details.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: oneprocess
+                password:
+                  type: string
+                  example: op2025
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuário ou senha incorretos
+
+  /api/dashboard/admin:
+    get:
+      summary: Admin Dashboard Overview
+      description: Returns consolidated statistics across all tenants for administrators.
+      operationId: getAdminDashboard
+      responses:
+        '200':
+          description: Admin dashboard statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalClientes:
+                    type: integer
+                    example: 3
+                  totalRpas:
+                    type: integer
+                    example: 8
+                  rpasAtivos:
+                    type: integer
+                    example: 5
+                  rpasManutencao:
+                    type: integer
+                    example: 2
+                  clientStats:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClientStatDto'
+
+  /api/dashboard/client/{clientId}:
+    get:
+      summary: Client Dashboard Overview
+      description: Returns statistics and RPA statuses specifically for a single client/tenant.
+      operationId: getClientDashboard
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the client/tenant
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Client stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRpas:
+                    type: integer
+                    example: 3
+                  rpasAtivos:
+                    type: integer
+                    example: 2
+                  rpasManutencao:
+                    type: integer
+                    example: 1
+                  rpasInativos:
+                    type: integer
+                    example: 0
+                  rpas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CadastroRpa'
+
+  /api/clientes:
+    get:
+      summary: List all Clients
+      description: Returns a list of all registered clients.
+      operationId: getAllClients
+      responses:
+        '200':
+          description: Successful execution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cliente'
+    post:
+      summary: Create a Client
+      description: Registers a new client company and creates an associated tenant user.
+      operationId: createClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRequest'
+      responses:
+        '201':
+          description: Client created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cliente'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Nome da empresa é obrigatório
+
+  /api/clientes/{id}:
+    delete:
+      summary: Delete a Client
+      description: Removes a client company, its users, and bindings.
+      operationId: deleteClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Client removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Cliente removido com sucesso
+
+  /api/rpas:
+    get:
+      summary: List RPAs
+      description: Returns all RPAs, optionally filtered by a specific client.
+      operationId: getRpas
+      parameters:
+        - name: clientId
+          in: query
+          required: false
+          description: UUID of the client to filter RPAs
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of RPAs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CadastroRpa'
+    post:
+      summary: Create an RPA
+      description: Registers a new RPA robot in a client's catalog.
+      operationId: createRpa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRpaRequest'
+      responses:
+        '201':
+          description: RPA created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CadastroRpa'
+        '400':
+          description: Invalid Client ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Cliente inválido
+
+  /api/rpas/{id}:
+    delete:
+      summary: Delete an RPA
+      description: Removes an RPA robot from the catalog.
+      operationId: deleteRpa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: RPA removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: RPA catalog removido com sucesso
+
+  /api/rpas/{id}/alertas:
+    put:
+      summary: Configure RPA Alerts
+      description: Updates the contact emails for an RPA's error notifications.
+      operationId: configureAlerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: email
+              example: ["alertas@empresa.com", "suporte@oneprocess.com"]
+      responses:
+        '200':
+          description: Alerts updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CadastroRpa'
+        '404':
+          description: RPA not found
+
+  /api/resultados:
+    get:
+      summary: Get execution logs
+      description: Lists subtask execution results with optional filters.
+      operationId: getResultados
+      parameters:
+        - name: clientId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: rpaId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          description: Filter by status (e.g. Sucesso, Erro, Inconsistência)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of execution logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpaLogResult'
+
+  /api/resultados/task:
+    post:
+      summary: Upsert an RPA Task execution
+      description: Receives execution telemetry header (idempotent task).
+      operationId: upsertTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '200':
+          description: Task updated or created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpaTask'
+        '400':
+          description: Missing ID or invalid RPA ID
+
+  /api/resultados/subtask:
+    post:
+      summary: Upsert an RPA Subtask item
+      description: Receives execution details of a specific item (idempotent subtask) and updates the task aggregates.
+      operationId: upsertSubtask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubtaskRequest'
+      responses:
+        '200':
+          description: Subtask updated or created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpaSubtask'
+        '400':
+          description: Missing ID or reference Task ID not found
+
+components:
+  schemas:
+    LoginResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        sobrenome:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [admin, client]
+        clientId:
+          type: string
+          format: uuid
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+
+    ClientStatDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        username:
+          type: string
+        rpaCount:
+          type: integer
+        executions:
+          type: integer
+        successRate:
+          type: integer
+        status:
+          type: string
+          example: Ativo
+
+    Cliente:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        razaoSocial:
+          type: string
+        cnpj:
+          type: string
+
+    CadastroRpa:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cliente:
+          $ref: '#/components/schemas/Cliente'
+        nome:
+          type: string
+        descricao:
+          type: string
+        departamento:
+          type: string
+        status:
+          type: string
+          example: Ativo
+        regras:
+          type: string
+        riscos:
+          type: string
+        emailsAlerta:
+          type: array
+          items:
+            type: string
+
+    CreateClientRequest:
+      type: object
+      required:
+        - nome
+      properties:
+        nome:
+          type: string
+        razaoSocial:
+          type: string
+        cnpj:
+          type: string
+        responsavel:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+
+    CreateRpaRequest:
+      type: object
+      required:
+        - clientId
+        - nome
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        descricao:
+          type: string
+        departamento:
+          type: string
+        status:
+          type: string
+          default: Ativo
+        regras:
+          type: string
+        riscos:
+          type: string
+        emailsAlerta:
+          type: array
+          items:
+            type: string
+
+    RpaLogResult:
+      type: object
+      properties:
+        dataExecucao:
+          type: string
+          format: date-time
+        numeroDocumento:
+          type: string
+        mensagemOnde:
+          type: string
+        status:
+          type: string
+        rpaNome:
+          type: string
+        valor:
+          type: number
+        fornecedor:
+          type: string
+
+    RpaTask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cadastroRpa:
+          $ref: '#/components/schemas/CadastroRpa'
+        nome:
+          type: string
+        caminhoJsonDisco:
+          type: string
+        status:
+          type: string
+        msgErro:
+          type: string
+        totalLinhas:
+          type: integer
+        linhasSucesso:
+          type: integer
+        linhasErro:
+          type: integer
+        timestampInicio:
+          type: string
+          format: date-time
+        timestampFim:
+          type: string
+          format: date-time
+
+    RpaSubtask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        task:
+          $ref: '#/components/schemas/RpaTask'
+        nome:
+          type: string
+        status:
+          type: string
+        msgErro:
+          type: string
+        msgSefaz:
+          type: string
+        numeroDocumento:
+          type: string
+        serieDocumento:
+          type: string
+        dataEmissao:
+          type: string
+          format: date
+        valorTotalDocumento:
+          type: number
+        codigoFornecedor:
+          type: string
+        nomeFornecedor:
+          type: string
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - id
+        - cadastroRpaId
+        - nome
+      properties:
+        id:
+          type: string
+          format: uuid
+        cadastroRpaId:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        caminhoJsonDisco:
+          type: string
+        status:
+          type: string
+          default: Processando
+        msgErro:
+          type: string
+        timestampFim:
+          type: string
+          format: date-time
+
+    CreateSubtaskRequest:
+      type: object
+      required:
+        - id
+        - idTask
+        - nome
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        idTask:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        status:
+          type: string
+        msgErro:
+          type: string
+        msgSefaz:
+          type: string
+        numeroDocumento:
+          type: string
+        serieDocumento:
+          type: string
+        dataEmissao:
+          type: string
+          format: date
+        valorTotalDocumento:
+          type: number
+        codigoFornecedor:
+          type: string
+        nomeFornecedor:
+          type: string

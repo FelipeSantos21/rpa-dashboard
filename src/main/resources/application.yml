@@ -6,11 +6,11 @@ spring:
     name: rpa-dashboard
   
   datasource:
-    # Use H2 in-memory by default for zero-setup local execution
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:rpadb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    # Use local Supabase PostgreSQL by default
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54322/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:dtKlOHK6H0HOJnKRS8KUQQRM}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
   
   h2:
     console:
@@ -20,7 +20,7 @@ spring:
         web-allow-others: true
   
   jpa:
-    database-platform: ${SPRING_JPA_PLATFORM:org.hibernate.dialect.H2Dialect}
+    database-platform: ${SPRING_JPA_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}
     hibernate:
       ddl-auto: update
     show-sql: false
