@@ -165,6 +165,13 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
+          <!-- SIMULATION SELECTOR FOR ADMIN -->
+          <div id="sim-selector-wrap" style="display:none; align-items:center; gap:8px; margin-right: 8px;">
+            <span style="font-size: var(--fs-xs); color: var(--color-text-muted); font-weight: 500;"><i class="ti ti-eye"></i> Visualizar como:</span>
+            <select id="sim-client-select" onchange="startSimulation(this.value)" style="width: auto; padding: 4px 28px 4px 10px; font-size: var(--fs-xs); background: var(--color-bg-surface-light); border: 1px solid var(--color-border); border-radius: var(--radius-base); color: var(--color-text); cursor: pointer; outline: none; height: 30px;">
+              <option value="">-- Administrador (Visão Geral) --</option>
+            </select>
+          </div>
           <span class="topbar-badge" id="topbar-badge"><i class="ti ti-shield-check"></i> Admin OneProcess</span>
           <button class="btn btn-admin btn-sm" id="btn-novo-top" onclick="abrirModalCliente()">
             <i class="ti ti-plus"></i> Novo cliente

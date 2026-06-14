@@ -51,10 +51,10 @@ function initMockData() {
 
   if (!localStorage.getItem(MOCK_RPAS_KEY)) {
     const rpas = [
-      { id: "r1111111-1111-1111-1111-111111111111", cliente: { id: "33333333-3333-3333-3333-333333333333", nome: "ABC Indústria Ltda" }, nome: "Leitura Planilha NFe", departamento: "Financeiro", status: "Ativo", descricao: "Lê planilhas de entrada e lança NFes no portal SEFAZ.", regras: "1. Baixar planilha do email\n2. Validar CNPJ\n3. Lançar no site SEFAZ\n4. Confirmar recibo", riscos: "Site do SEFAZ instável, formato de planilha incorreto.", emailsAlerta: ["fiscal@abc.com", "suporte@oneprocess.com"] },
-      { id: "r2222222-2222-2222-2222-222222222222", cliente: { id: "33333333-3333-3333-3333-333333333333", nome: "ABC Indústria Ltda" }, nome: "Faturamento Automático", departamento: "Faturamento", status: "Em Manutenção", descricao: "Gera notas fiscais de saída automaticamente com base no ERP.", regras: "1. Consultar pedidos prontos\n2. Emitir NF-e\n3. Enviar XML para o cliente", riscos: "Indisponibilidade do ERP, rejeição de alíquota tributária.", emailsAlerta: ["faturamento@abc.com"] },
-      { id: "r3333333-3333-3333-3333-333333333333", cliente: { id: "44444444-4444-4444-4444-444444444444", nome: "TechSolutions S.A." }, nome: "Conciliação Bancária", departamento: "Financeiro", status: "Ativo", descricao: "Verifica extratos bancários e faz o match no sistema de contas a pagar.", regras: "1. Baixar OFX do banco\n2. Comparar com contas pagas\n3. Baixar no ERP", riscos: "Extrato bancário incompleto, divergência de centavos.", emailsAlerta: ["financeiro@techsolutions.com"] },
-      { id: "r4444444-4444-4444-4444-444444444444", cliente: { id: "55555555-5555-5555-5555-555555555555", nome: "Global Logistics Corp" }, nome: "Monitoramento de Cargas", departamento: "Operações", status: "Ativo", descricao: "Rastreia entregas nos portais das transportadoras parceiras.", regras: "1. Consultar chave de rastreio\n2. Capturar status atual\n3. Atualizar TMS", riscos: "Portal de transportadora com CAPTCHA.", emailsAlerta: ["logistica@globallog.com"] }
+      { id: "r1111111-1111-1111-1111-111111111111", cliente: { id: "33333333-3333-3333-3333-333333333333", nome: "ABC Indústria Ltda" }, nome: "Leitura Planilha NFe", identificadorRpa: "rpa_sja_001", departamento: "Financeiro", status: "Ativo", descricao: "Lê planilhas de entrada e lança NFes no portal SEFAZ.", regras: "1. Baixar planilha do email\n2. Validar CNPJ\n3. Lançar no site SEFAZ\n4. Confirmar recibo", riscos: "Site do SEFAZ instável, formato de planilha incorreto.", emailsAlerta: ["fiscal@abc.com", "suporte@oneprocess.com"] },
+      { id: "r2222222-2222-2222-2222-222222222222", cliente: { id: "33333333-3333-3333-3333-333333333333", nome: "ABC Indústria Ltda" }, nome: "Faturamento Automático", identificadorRpa: "rpa_sja_002", departamento: "Faturamento", status: "Em Manutenção", descricao: "Gera notas fiscais de saída automaticamente com base no ERP.", regras: "1. Consultar pedidos prontos\n2. Emitir NF-e\n3. Enviar XML para o cliente", riscos: "Indisponibilidade do ERP, rejeição de alíquota tributária.", emailsAlerta: ["faturamento@abc.com"] },
+      { id: "r3333333-3333-3333-3333-333333333333", cliente: { id: "44444444-4444-4444-4444-444444444444", nome: "TechSolutions S.A." }, nome: "Conciliação Bancária", identificadorRpa: "rpa_sja_003", departamento: "Financeiro", status: "Ativo", descricao: "Verifica extratos bancários e faz o match no sistema de contas a pagar.", regras: "1. Baixar OFX do banco\n2. Comparar com contas pagas\n3. Baixar no ERP", riscos: "Extrato bancário incompleto, divergência de centavos.", emailsAlerta: ["financeiro@techsolutions.com"] },
+      { id: "r4444444-4444-4444-4444-444444444444", cliente: { id: "55555555-5555-5555-5555-555555555555", nome: "Global Logistics Corp" }, nome: "Monitoramento de Cargas", identificadorRpa: "rpa_sja_004", departamento: "Operações", status: "Ativo", descricao: "Rastreia entregas nos portais das transportadoras parceiras.", regras: "1. Consultar chave de rastreio\n2. Capturar status atual\n3. Atualizar TMS", riscos: "Portal de transportadora com CAPTCHA.", emailsAlerta: ["logistica@globallog.com"] }
     ];
     saveMockRpas(rpas);
   }
@@ -233,6 +233,17 @@ function bootstrapApp() {
     simContainer.style.display = 'none';
   }
 
+  // Simulation selector setup
+  const simSelectorWrap = document.getElementById('sim-selector-wrap');
+  if (simSelectorWrap) {
+    if (session.originalRole === 'admin') {
+      simSelectorWrap.style.display = 'flex';
+      populateSimulationSelector();
+    } else {
+      simSelectorWrap.style.display = 'none';
+    }
+  }
+
   // Topbar and navigation boot
   const tb = document.getElementById('topbar-badge');
   const btnNovo = document.getElementById('btn-novo-top');
@@ -260,6 +271,74 @@ const SCREEN_TITLES = {
   'alertas':    ['Configurar Alertas','Contatos de notificação de erros'],
   'resultados': ['Resultados','Execuções e histórico em tempo real'],
 };
+
+function populateSimulationSelector() {
+  const select = document.getElementById('sim-client-select');
+  if (!select) return;
+  
+  const handleData = (clients) => {
+    select.innerHTML = '<option value="">-- Administrador (Visão Geral) --</option>';
+    clients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nome;
+      select.appendChild(opt);
+    });
+    
+    if (session.originalRole === 'admin' && session.role === 'client') {
+      select.value = session.clientId;
+    } else {
+      select.value = "";
+    }
+  };
+
+  if (isMockMode()) {
+    handleData(getMockClients());
+  } else {
+    fetch('/api/clientes')
+      .antigravityJson()
+      .then(data => {
+        handleData(data);
+      })
+      .catch(err => {
+        console.warn("Failed to fetch clients for simulation selector", err);
+        handleData([]);
+      });
+  }
+}
+
+function startSimulation(clientId) {
+  if (!session || session.originalRole !== 'admin') return;
+  
+  if (!clientId) {
+    exitSimulation();
+    return;
+  }
+  
+  const handleStart = (name) => {
+    session.role = 'client';
+    session.clientId = clientId;
+    session.companyName = name;
+    sessionStorage.setItem("op_session", JSON.stringify(session));
+    bootstrapApp();
+  };
+
+  if (isMockMode()) {
+    const clients = getMockClients();
+    const found = clients.find(c => c.id === clientId);
+    handleStart(found ? found.nome : "Cliente Simulado");
+  } else {
+    fetch('/api/clientes')
+      .antigravityJson()
+      .then(clients => {
+        const found = clients.find(c => c.id === clientId);
+        handleStart(found ? found.nome : "Cliente Simulado");
+      })
+      .catch(err => {
+        console.error("Failed to fetch clients for simulation", err);
+      });
+  }
+}
 
 function exitSimulation() {
   if (session && session.originalRole === 'admin') {
@@ -506,13 +585,14 @@ function renderRpasAdminData(data) {
   const tbody = document.querySelector('#tbl-rpas-admin tbody');
   tbody.innerHTML = '';
   if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);">Nenhum RPA cadastrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--color-text-muted);">Nenhum RPA cadastrado.</td></tr>`;
     return;
   }
   data.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${r.nome}</strong></td>
+      <td><code>${r.identificadorRpa || '—'}</code></td>
       <td><span class="badge badge-info">${r.cliente.nome}</span></td>
       <td>${r.departamento || '—'}</td>
       <td><span class="badge ${r.status === 'Ativo' ? 'badge-success' : (r.status === 'Inativo' ? 'badge-danger' : 'badge-warn')}">${r.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : r.status}</span></td>
@@ -599,7 +679,7 @@ function renderClientDashboardData(data) {
       <div class="rpa-icon ${icon}"><i class="ti ${rIcon}"></i></div>
       <div>
         <div style="font-weight:500;font-size:var(--fs-base);">${r.nome}</div>
-        <div style="font-size:var(--fs-sm);color:var(--color-text-muted);">${r.departamento || 'Geral'} · ${r.descricao || 'Sem descrição'}</div>
+        <div style="font-size:var(--fs-sm);color:var(--color-text-muted);">${r.departamento || 'Geral'} &middot; ID: <code>${r.identificadorRpa || '—'}</code> &middot; ${r.descricao || 'Sem descrição'}</div>
       </div>
       <span class="badge ${r.status === 'Ativo' ? 'badge-success' : (r.status === 'Inativo' ? 'badge-danger' : 'badge-warn')}" style="margin-left:auto;margin-right:12px;">
         ${r.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : r.status}
@@ -947,12 +1027,13 @@ function clearClientFormFields() {
 function submitRpa() {
   const clientId = document.getElementById('m-rpa-cliente').value;
   const nome = document.getElementById('m-rpa-nome').value.trim();
+  const identificadorRpa = document.getElementById('m-rpa-identificador').value.trim();
   const dep = document.getElementById('m-rpa-dep').value.trim();
   const regras = document.getElementById('m-rpa-regras').value.trim();
   const riscos = document.getElementById('m-rpa-riscos').value.trim();
 
-  if(!clientId || !nome) {
-    alert("Selecione o cliente e preencha o nome do RPA.");
+  if(!clientId || !nome || !identificadorRpa) {
+    alert("Selecione o cliente, preencha o nome do RPA e o identificador.");
     return;
   }
 
@@ -964,6 +1045,7 @@ function submitRpa() {
       id: crypto.randomUUID ? crypto.randomUUID() : "mock-rpa-" + Date.now(),
       cliente: { id: client.id, nome: client.nome },
       nome: nome,
+      identificadorRpa: identificadorRpa,
       departamento: dep,
       status: 'Ativo',
       descricao: regras.substring(0, 100),
@@ -987,6 +1069,7 @@ function submitRpa() {
     body: JSON.stringify({
       clientId: clientId,
       nome: nome,
+      identificadorRpa: identificadorRpa,
       departamento: dep,
       status: 'Ativo',
       regras: regras,
@@ -1012,6 +1095,7 @@ function submitRpa() {
 
 function clearRpaFormFields() {
   document.getElementById('m-rpa-nome').value = '';
+  document.getElementById('m-rpa-identificador').value = '';
   document.getElementById('m-rpa-dep').value = '';
   document.getElementById('m-rpa-regras').value = '';
   document.getElementById('m-rpa-riscos').value = '';

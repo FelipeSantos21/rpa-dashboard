@@ -25,6 +25,9 @@ public class CadastroRpa {
     
     @Column(nullable = false)
     private String nome;
+
+    @Column(name = "identificador_rpa")
+    private String identificadorRpa;
     
     @Column(columnDefinition = "TEXT")
     private String descricao;

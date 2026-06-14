@@ -272,6 +272,7 @@ class RpaController {
         CadastroRpa rpa = CadastroRpa.builder()
                 .cliente(clientOpt.get())
                 .nome(req.getNome())
+                .identificadorRpa(req.getIdentificadorRpa())
                 .descricao(req.getDescricao())
                 .departamento(req.getDepartamento())
                 .status(req.getStatus() != null ? req.getStatus() : "Ativo")
@@ -307,6 +308,7 @@ class RpaController {
 class CreateRpaRequest {
     private UUID clientId;
     private String nome;
+    private String identificadorRpa;
     private String descricao;
     private String departamento;
     private String status;

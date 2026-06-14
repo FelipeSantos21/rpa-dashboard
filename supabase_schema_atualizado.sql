@@ -42,6 +42,7 @@ CREATE TABLE public.cadastro_rpa (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     id_cliente UUID REFERENCES public.cliente(id) ON DELETE CASCADE,
     nome VARCHAR(255) NOT NULL,
+    identificador_rpa VARCHAR(255),
     descricao TEXT,
     departamento VARCHAR(100),
     status VARCHAR(50) DEFAULT 'Ativo', -- 'Ativo', 'Inativo', 'Em Manutenção'
