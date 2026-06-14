@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Modais - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="modals">
+  <!-- MODAL: NOVO CLIENTE -->
+  <div class="modal-overlay" id="modal-cliente">
+    <div class="modal">
+      <div class="modal-title"><i class="ti ti-building" style="color:var(--color-admin);"></i>Cadastrar novo cliente</div>
+      <div class="modal-sub">Crie a empresa cliente e defina suas credenciais administrativas</div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Nome da empresa *</div><input type="text" id="m-cli-nome" placeholder="Ex: ABC Indústria Ltda"></div>
+        <div class="field"><div class="field-label">Responsável *</div><input type="text" id="m-cli-resp" placeholder="Nome do contato"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Razão Social</div><input type="text" id="m-cli-razao" placeholder="Razão Social completa"></div>
+        <div class="field"><div class="field-label">CNPJ</div><input type="text" id="m-cli-cnpj" placeholder="12.345.678/0001-00"></div>
+      </div>
+      <hr>
+      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--color-admin);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;"><i class="ti ti-key" style="vertical-align:-2px;margin-right:5px;"></i>Credenciais de acesso</div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Login (Username) *</div><input type="text" id="m-cli-username" placeholder="Ex: cliente_nomeempresa"></div>
+        <div class="field"><div class="field-label">Senha *</div><input type="password" id="m-cli-password" placeholder="Defina uma senha"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-cliente')">Cancelar</button>
+        <button class="btn btn-admin" onclick="submitClient()"><i class="ti ti-device-floppy"></i> Salvar cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO RPA -->
+  <div class="modal-overlay" id="modal-rpa">
+    <div class="modal">
+      <div class="modal-title"><i class="ti ti-robot" style="color:var(--color-admin);"></i>Cadastrar RPA</div>
+      <div class="modal-sub">Registre um novo robô vinculado a um cliente</div>
+      <div class="field">
+        <div class="field-label">Cliente Proprietário *</div>
+        <select id="m-rpa-cliente">
+          <!-- Dynamically populated with clients -->
+        </select>
+      </div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Nome do RPA *</div><input type="text" id="m-rpa-nome" placeholder="Ex: Conciliação Fiscal"></div>
+        <div class="field"><div class="field-label">Departamento</div><input type="text" id="m-rpa-dep" placeholder="Ex: Financeiro"></div>
+      </div>
+      <div class="field"><div class="field-label">Regras de Negócio</div><textarea id="m-rpa-regras" placeholder="Descreva o passo a passo que o robô executa..."></textarea></div>
+      <div class="field" style="margin-bottom:0;"><div class="field-label">Riscos mapeados</div><textarea id="m-rpa-riscos" placeholder="Riscos operacionais catalogados..." style="min-height:60px;"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-rpa')">Cancelar</button>
+        <button class="btn btn-admin" onclick="submitRpa()"><i class="ti ti-device-floppy"></i> Salvar RPA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREDENCIAIS -->
+  <div class="modal-overlay" id="modal-cred">
+    <div class="modal" style="width:440px;">
+      <div class="modal-title"><i class="ti ti-key" style="color:var(--color-admin);"></i>Credenciais de acesso</div>
+      <div class="modal-sub" id="cred-modal-sub">Detalhamento para conexão do robô Java</div>
+      <div class="cred-box">
+        <div class="cred-row"><span class="cred-label">Empresa</span><span class="cred-value" id="cred-empresa">—</span></div>
+        <div class="cred-row"><span class="cred-label">Client Username</span><span class="cred-value" id="cred-user">—</span></div>
+        <div class="cred-row"><span class="cred-label">Client Password</span><span class="cred-value" id="cred-pass">—</span></div>
+        <div class="cred-row"><span class="cred-label">API Gateway Url</span><span class="cred-value" style="font-size:11px;" id="cred-url">http://localhost:8080/api</span></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="copyCredentials()"><i class="ti ti-copy"></i> Copiar dados</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-cred')">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

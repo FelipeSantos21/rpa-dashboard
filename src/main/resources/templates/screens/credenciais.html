@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Credenciais - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-credenciais" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Credenciais de acesso</div>
+      <div class="section-sub">Acessos dos robôs e usuários clientes</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-key" style="color:var(--color-admin);"></i> Logins dos clientes</div>
+    </div>
+    <table id="tbl-credenciais">
+      <thead><tr><th>Cliente</th><th>Username (Robot Client-ID)</th><th>Senha (JWT Secret Key)</th><th>Ações</th></tr></thead>
+      <tbody>
+        <!-- Dynamically populated -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

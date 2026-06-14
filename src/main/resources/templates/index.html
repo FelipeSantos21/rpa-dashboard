@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneProcess — Gestão de RPAs</title>
+  
+  <!-- Thymeleaf/Engine Auto-Detection -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.isThymeleafProcessed = /*[[true]]*/ false;
+    window.__INDEX_DATA__ = {};
+    /*]]>*/
+  </script>
+
+  <!-- Dual-Path Assets: Static Fallback + Thymeleaf Engine Attribute -->
+  <link rel="stylesheet" href="../static/css/style.css" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN
+     ══════════════════════════════════════════ -->
+<div th:replace="~{screens/login :: login}">
+  <div class="login-wrap" id="login-wrap">
+    <div class="login-box">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#opGradLogin)" />
+          <path d="M2 17L12 22L22 17" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M2 12L12 17L22 12" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="opGradLogin" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#5f5fe8" />
+              <stop offset="1" stop-color="#2c2cb5" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>OneProcess</span>
+      </div>
+      <div class="login-title">Bem-vindo de volta</div>
+      <div class="login-sub">Informe suas credenciais para acessar a plataforma</div>
+
+      <div class="login-error" id="login-error">
+        <i class="ti ti-alert-circle" style="vertical-align:-2px;margin-right:6px;"></i>
+        <span id="login-error-msg">Usuário ou senha incorretos. Tente novamente.</span>
+      </div>
+
+      <div class="login-field">
+        <div class="login-label">Usuário</div>
+        <div class="login-input-wrap">
+          <i class="ti ti-user"></i>
+          <input class="login-input" type="text" id="inp-user" placeholder="Digite seu usuário" autocomplete="off">
+        </div>
+      </div>
+      <div class="login-field">
+        <div class="login-label">Senha</div>
+        <div class="login-input-wrap">
+          <i class="ti ti-lock"></i>
+          <input class="login-input" type="password" id="inp-pass" placeholder="Digite sua senha" autocomplete="off">
+        </div>
+      </div>
+
+      <button class="login-btn" onclick="doLogin()">
+        <i class="ti ti-login" style="vertical-align:-2px;margin-right:6px;"></i>
+        Entrar
+      </button>
+
+      <div class="login-hint">
+        <strong style="color:var(--color-primary-pale);">Acesso administrativo OneProcess:</strong><br>
+        usuário <code>oneprocess</code> &nbsp;·&nbsp; senha <code>op2025</code><br><br>
+        <strong style="color:var(--color-primary-pale);">Acesso cliente (semeado):</strong><br>
+        usuário <code>cliente_abc</code> &nbsp;·&nbsp; senha <code>abc123</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     APP SHELL
+     ══════════════════════════════════════════ -->
+<div class="app" id="app">
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+  <div style="display:flex;min-height:100vh;">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#opGradSidebar)" />
+          <path d="M2 17L12 22L22 17" stroke="url(#opGradSidebar)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M2 12L12 17L22 12" stroke="url(#opGradSidebar)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="opGradSidebar" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#5f5fe8" />
+              <stop offset="1" stop-color="#2c2cb5" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>OneProcess</span>
+      </div>
+
+      <div class="profile-chip" id="profile-chip">
+        <div class="avatar" id="profile-avatar">OP</div>
+        <div>
+          <div class="profile-name" id="profile-name">OneProcess</div>
+          <div class="profile-role" id="profile-role-label">Administrador</div>
+        </div>
+      </div>
+
+      <!-- SIMULATION CONTROL -->
+      <div id="simulated-badge-container" style="display:none; padding: 10px 12px; margin: 4px 12px; background: var(--color-admin-bg); border: 1px dashed var(--color-admin-border-hover); border-radius: var(--radius-base); font-size: var(--fs-xs); text-align: center;">
+        <span style="color:var(--color-admin); font-weight: 600; display: block; margin-bottom: 4px;"><i class="ti ti-eye" style="margin-right: 4px; vertical-align: -2px;"></i>Simulando Cliente</span>
+        <button class="btn btn-ghost btn-xs" style="width: 100%; border-color: var(--color-admin-border); color: var(--color-admin); font-size: 10.5px;" onclick="exitSimulation()"><i class="ti ti-arrow-back-up"></i> Painel Admin</button>
+      </div>
+
+      <!-- ADMIN NAV -->
+      <div id="nav-admin">
+        <div class="sidebar-label">Administração</div>
+        <div class="nav-item nav-admin active" onclick="go('dash-admin')">
+          <i class="ti ti-layout-dashboard"></i> Dashboard
+        </div>
+        <div class="nav-item nav-admin" onclick="go('clientes')">
+          <i class="ti ti-building"></i> Clientes
+        </div>
+        <div class="nav-item nav-admin" onclick="go('rpas-admin')">
+          <i class="ti ti-robot"></i> Catalog RPAs
+        </div>
+        <div class="nav-item nav-admin" onclick="go('credenciais')">
+          <i class="ti ti-key"></i> Credenciais
+        </div>
+      </div>
+
+      <!-- CLIENT NAV -->
+      <div id="nav-client" style="display:none;">
+        <div class="sidebar-label">Menu</div>
+        <div class="nav-item active" onclick="go('meus-rpas')">
+          <i class="ti ti-robot"></i> Meus RPAs
+        </div>
+        <div class="nav-item" onclick="go('alertas')">
+          <i class="ti ti-bell"></i> Configurar Alertas
+        </div>
+        <div class="nav-item" onclick="go('resultados')">
+          <i class="ti ti-chart-bar"></i> Resultados
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="doLogout()">
+          <i class="ti ti-logout"></i> Sair da conta
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main">
+      <div class="topbar" id="topbar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="btn btn-ghost btn-sm topbar-menu-btn" style="display:none; padding: 6px 10px; border-radius: var(--radius-base);" onclick="toggleSidebar(true)">
+            <i class="ti ti-menu-2" style="font-size:20px; color: var(--color-text);"></i>
+          </button>
+          <div>
+            <div class="topbar-title" id="topbar-title">Dashboard</div>
+            <div class="topbar-sub" id="topbar-sub">Visão geral da plataforma</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="topbar-badge" id="topbar-badge"><i class="ti ti-shield-check"></i> Admin OneProcess</span>
+          <button class="btn btn-admin btn-sm" id="btn-novo-top" onclick="abrirModalCliente()">
+            <i class="ti ti-plus"></i> Novo cliente
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ── ADMIN DASHBOARD SCREEN ── -->
+        <div id="screen-dash-admin" class="screen active" th:replace="~{screens/dash-admin :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Dashboard geral</div>
+              <div class="section-sub">Visão consolidada de todos os clientes</div>
+            </div>
+            <button class="btn btn-admin" onclick="abrirModalCliente()"><i class="ti ti-plus"></i> Novo cliente</button>
+          </div>
+
+          <div class="grid4" style="margin-bottom:24px;">
+            <div class="metric metric-admin">
+              <div class="metric-icon"><i class="ti ti-building"></i></div>
+              <div class="metric-num" id="admin-m-clientes">4</div>
+              <div class="metric-lbl">Clientes ativos</div>
+            </div>
+            <div class="metric metric-total">
+              <div class="metric-icon"><i class="ti ti-robot"></i></div>
+              <div class="metric-num" id="admin-m-rpas">4</div>
+              <div class="metric-lbl">RPAs cadastrados</div>
+            </div>
+            <div class="metric metric-success">
+              <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+              <div class="metric-num" id="admin-m-ativos">3</div>
+              <div class="metric-lbl">RPAs ativos</div>
+            </div>
+            <div class="metric metric-warn">
+              <div class="metric-icon"><i class="ti ti-tool"></i></div>
+              <div class="metric-num" id="admin-m-manutencao">1</div>
+              <div class="metric-lbl">Em manutenção</div>
+            </div>
+          </div>
+
+          <div class="grid3" id="admin-clients-grid">
+            <!-- Dynamically populated at runtime or fallback mock -->
+          </div>
+        </div>
+
+        <!-- ── CLIENTS SCREEN ── -->
+        <div id="screen-clientes" class="screen" th:replace="~{screens/clientes :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Clientes</div>
+              <div class="section-sub">Gerencie os clientes e seus acessos</div>
+            </div>
+            <button class="btn btn-admin" onclick="abrirModalCliente()"><i class="ti ti-plus"></i> Cadastrar cliente</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-building" style="color:var(--color-admin);"></i> Lista de clientes</div>
+            </div>
+            <table id="tbl-clientes">
+              <thead><tr>
+                <th>Empresa</th><th>Razão Social</th><th>CNPJ</th><th>Status</th><th>Ações</th>
+              </tr></thead>
+              <tbody>
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── RPAS ADMIN SCREEN ── -->
+        <div id="screen-rpas-admin" class="screen" th:replace="~{screens/rpas-admin :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Catalog RPAs</div>
+              <div class="section-sub">Todos os RPAs cadastrados na plataforma</div>
+            </div>
+            <button class="btn btn-admin" onclick="abrirModalRPA()"><i class="ti ti-plus"></i> Novo RPA</button>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-robot" style="color:var(--color-admin);"></i> Todos os RPAs</div>
+            </div>
+            <table id="tbl-rpas-admin">
+              <thead><tr>
+                <th>Nome do RPA</th><th>Cliente</th><th>Departamento</th><th>Status</th><th>Ações</th>
+              </tr></thead>
+              <tbody>
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── CREDENTIALS SCREEN ── -->
+        <div id="screen-credenciais" class="screen" th:replace="~{screens/credenciais :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Credenciais de acesso</div>
+              <div class="section-sub">Acessos dos robôs e usuários clientes</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-key" style="color:var(--color-admin);"></i> Logins dos clientes</div>
+            </div>
+            <table id="tbl-credenciais">
+              <thead><tr><th>Cliente</th><th>Username (Robot Client-ID)</th><th>Senha (JWT Secret Key)</th><th>Ações</th></tr></thead>
+              <tbody>
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ CLIENT CO-WORKSPACE SCREENS ══ -->
+
+        <!-- ── CLIENT: MY RPAS SCREEN ── -->
+        <div id="screen-meus-rpas" class="screen" th:replace="~{screens/meus-rpas :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Meus RPAs</div>
+              <div class="section-sub" id="client-company-sub">Automações ativas</div>
+            </div>
+          </div>
+          <div class="grid4" style="margin-bottom:20px;">
+            <div class="metric metric-total">
+              <div class="metric-icon"><i class="ti ti-robot"></i></div>
+              <div class="metric-num" id="client-m-total">2</div>
+              <div class="metric-lbl">Cadastrados</div>
+            </div>
+            <div class="metric metric-success">
+              <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+              <div class="metric-num" id="client-m-ativos">1</div>
+              <div class="metric-lbl">Ativos</div>
+            </div>
+            <div class="metric metric-warn">
+              <div class="metric-icon"><i class="ti ti-tool"></i></div>
+              <div class="metric-num" id="client-m-manutencao">1</div>
+              <div class="metric-lbl">Em manutenção</div>
+            </div>
+            <div class="metric metric-danger">
+              <div class="metric-icon"><i class="ti ti-x"></i></div>
+              <div class="metric-num" id="client-m-inativos">0</div>
+              <div class="metric-lbl">Inativos</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-list" style="color:var(--color-primary-lilac);"></i>Lista de RPAs</div>
+            </div>
+            <div id="client-rpa-list-rows">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CLIENT: ALERTS SCREEN ── -->
+        <div id="screen-alertas" class="screen" th:replace="~{screens/alertas :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Configurar Alertas</div>
+              <div class="section-sub">Defina os disparos de e-mail por RPA em caso de erro</div>
+            </div>
+            <select id="alert-rpa-select" style="width:auto;min-width:240px;" onchange="loadAlertsForSelectedRpa()">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div style="max-width:700px;">
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-title"><i class="ti ti-mail-forward"></i>Lista de Contatos de Alerta</div>
+              <div class="toggle-row">
+                <div class="toggle-info">
+                  <div class="title">Ativar alertas de e-mail</div>
+                  <div class="sub">Se ativado, envia alertas imediatos aos emails configurados caso uma subtask falhe.</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" checked>
+                  <span class="tslider"></span>
+                </label>
+              </div>
+              <div style="margin-top:16px; margin-bottom:16px;">
+                <div class="field-label">Destinatários configurados</div>
+                <div id="alert-email-tags" style="min-height:50px; padding:10px; border: 1px solid var(--color-border); border-radius:var(--radius-base); background:var(--color-bg-surface); margin-bottom:10px;">
+                  <!-- Dynamic tags -->
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="email" id="inp-alert-email" placeholder="Adicionar e-mail (ex: suporte@empresa.com)" style="flex:1;">
+                  <button class="btn btn-ghost btn-sm" onclick="addAlertEmailTag()"><i class="ti ti-plus"></i></button>
+                </div>
+              </div>
+              <hr>
+              <div style="display:flex;justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="saveRpaAlerts()"><i class="ti ti-device-floppy"></i> Salvar Configurações</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CLIENT: RESULTS SCREEN ── -->
+        <div id="screen-resultados" class="screen" th:replace="~{screens/resultados :: screen}">
+          <div class="section-header">
+            <div>
+              <div class="section-h">Resultados</div>
+              <div class="section-sub">Execuções e desempenho analítico dos seus RPAs</div>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-title"><i class="ti ti-filter"></i>Filtros de Execução</div>
+            <div class="grid3" style="margin-bottom:14px;">
+              <div class="field" style="margin-bottom:0;">
+                <div class="field-label">RPA</div>
+                <select id="filter-rpa">
+                  <option value="">Todos</option>
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <div class="field-label">Resultado</div>
+                <select id="filter-status">
+                  <option value="Todos">Todos</option>
+                  <option value="Sucesso">Sucesso</option>
+                  <option value="Inconsistência">Inconsistência</option>
+                  <option value="Erro">Erro</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0; display:flex; align-items:flex-end;">
+                <button class="btn btn-primary" onclick="loadExecutions()" style="width:100%;"><i class="ti ti-search"></i> Filtrar</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid4" style="margin-bottom:20px;">
+            <div class="metric metric-total">
+              <div class="metric-icon"><i class="ti ti-refresh"></i></div>
+              <div class="metric-num" id="res-m-total">5</div>
+              <div class="metric-lbl">Transações realizadas</div>
+            </div>
+            <div class="metric metric-success">
+              <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+              <div class="metric-num" id="res-m-sucesso">3</div>
+              <div class="metric-lbl">Sucessos</div>
+            </div>
+            <div class="metric metric-danger">
+              <div class="metric-icon"><i class="ti ti-alert-circle"></i></div>
+              <div class="metric-num" id="res-m-erro">2</div>
+              <div class="metric-lbl">Falhas/Erros</div>
+            </div>
+            <div class="metric metric-warn">
+              <div class="metric-icon"><i class="ti ti-percentage"></i></div>
+              <div class="metric-num" id="res-m-taxa">60%</div>
+              <div class="metric-lbl">Taxa de sucesso</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="table-header">
+              <div class="table-title"><i class="ti ti-table" style="color:var(--color-primary-lilac);"></i>Analítico de Subtasks (Tempo Real)</div>
+            </div>
+            <table id="tbl-resultados">
+              <thead><tr><th>Data Execução</th><th>RPA</th><th>Documento / ID</th><th>Mensagem de Retorno</th><th>Status</th></tr></thead>
+              <tbody>
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div>
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════
+     MODALS
+     ══════════════════════════════════════════ -->
+<div th:replace="~{screens/modals :: modals}">
+  <!-- MODAL: NOVO CLIENTE -->
+  <div class="modal-overlay" id="modal-cliente">
+    <div class="modal">
+      <div class="modal-title"><i class="ti ti-building" style="color:var(--color-admin);"></i>Cadastrar novo cliente</div>
+      <div class="modal-sub">Crie a empresa cliente e defina suas credenciais administrativas</div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Nome da empresa *</div><input type="text" id="m-cli-nome" placeholder="Ex: ABC Indústria Ltda"></div>
+        <div class="field"><div class="field-label">Responsável *</div><input type="text" id="m-cli-resp" placeholder="Nome do contato"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Razão Social</div><input type="text" id="m-cli-razao" placeholder="Razão Social completa"></div>
+        <div class="field"><div class="field-label">CNPJ</div><input type="text" id="m-cli-cnpj" placeholder="12.345.678/0001-00"></div>
+      </div>
+      <hr>
+      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--color-admin);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;"><i class="ti ti-key" style="vertical-align:-2px;margin-right:5px;"></i>Credenciais de acesso</div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Login (Username) *</div><input type="text" id="m-cli-username" placeholder="Ex: cliente_nomeempresa"></div>
+        <div class="field"><div class="field-label">Senha *</div><input type="password" id="m-cli-password" placeholder="Defina uma senha"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-cliente')">Cancelar</button>
+        <button class="btn btn-admin" onclick="submitClient()"><i class="ti ti-device-floppy"></i> Salvar cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO RPA -->
+  <div class="modal-overlay" id="modal-rpa">
+    <div class="modal">
+      <div class="modal-title"><i class="ti ti-robot" style="color:var(--color-admin);"></i>Cadastrar RPA</div>
+      <div class="modal-sub">Registre um novo robô vinculado a um cliente</div>
+      <div class="field">
+        <div class="field-label">Cliente Proprietário *</div>
+        <select id="m-rpa-cliente">
+          <!-- Dynamically populated with clients -->
+        </select>
+      </div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Nome do RPA *</div><input type="text" id="m-rpa-nome" placeholder="Ex: Conciliação Fiscal"></div>
+        <div class="field"><div class="field-label">Departamento</div><input type="text" id="m-rpa-dep" placeholder="Ex: Financeiro"></div>
+      </div>
+      <div class="field"><div class="field-label">Regras de Negócio</div><textarea id="m-rpa-regras" placeholder="Descreva o passo a passo que o robô executa..."></textarea></div>
+      <div class="field" style="margin-bottom:0;"><div class="field-label">Riscos mapeados</div><textarea id="m-rpa-riscos" placeholder="Riscos operacionais catalogados..." style="min-height:60px;"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-rpa')">Cancelar</button>
+        <button class="btn btn-admin" onclick="submitRpa()"><i class="ti ti-device-floppy"></i> Salvar RPA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREDENCIAIS -->
+  <div class="modal-overlay" id="modal-cred">
+    <div class="modal" style="width:440px;">
+      <div class="modal-title"><i class="ti ti-key" style="color:var(--color-admin);"></i>Credenciais de acesso</div>
+      <div class="modal-sub" id="cred-modal-sub">Detalhamento para conexão do robô Java</div>
+      <div class="cred-box">
+        <div class="cred-row"><span class="cred-label">Empresa</span><span class="cred-value" id="cred-empresa">—</span></div>
+        <div class="cred-row"><span class="cred-label">Client Username</span><span class="cred-value" id="cred-user">—</span></div>
+        <div class="cred-row"><span class="cred-label">Client Password</span><span class="cred-value" id="cred-pass">—</span></div>
+        <div class="cred-row"><span class="cred-label">API Gateway Url</span><span class="cred-value" style="font-size:11px;" id="cred-url">http://localhost:8080/api</span></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="copyCredentials()"><i class="ti ti-copy"></i> Copiar dados</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-cred')">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dual-Path Script: Static Fallback + Thymeleaf Engine Attribute -->
+<script src="../static/js/app.js?v=2" th:src="@{/js/app.js(v=2)}"></script>
+</body>
+</html>

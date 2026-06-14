@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Clientes - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-clientes" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Clientes</div>
+      <div class="section-sub">Gerencie os clientes e seus acessos</div>
+    </div>
+    <button class="btn btn-admin" onclick="abrirModalCliente()"><i class="ti ti-plus"></i> Cadastrar cliente</button>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-building" style="color:var(--color-admin);"></i> Lista de clientes</div>
+    </div>
+    <table id="tbl-clientes">
+      <thead><tr>
+        <th>Empresa</th><th>Razão Social</th><th>CNPJ</th><th>Status</th><th>Ações</th>
+      </tr></thead>
+      <tbody>
+        <!-- Dynamically populated -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

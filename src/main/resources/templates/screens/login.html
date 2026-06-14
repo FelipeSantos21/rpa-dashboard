@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Login - Preview</title>
+</head>
+<body style="background:var(--color-bg); display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0;">
+
+<div th:fragment="login" class="login-wrap" id="login-wrap" style="display:flex;">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#opGradLogin)" />
+        <path d="M2 17L12 22L22 17" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M2 12L12 17L22 12" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <defs>
+          <linearGradient id="opGradLogin" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#5f5fe8" />
+            <stop offset="1" stop-color="#2c2cb5" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>OneProcess</span>
+    </div>
+    <div class="login-title">Bem-vindo de volta</div>
+    <div class="login-sub">Informe suas credenciais para acessar a plataforma</div>
+
+    <div class="login-error" id="login-error">
+      <i class="ti ti-alert-circle" style="vertical-align:-2px;margin-right:6px;"></i>
+      <span id="login-error-msg">Usuário ou senha incorretos. Tente novamente.</span>
+    </div>
+
+    <div class="login-field">
+      <div class="login-label">Usuário</div>
+      <div class="login-input-wrap">
+        <i class="ti ti-user"></i>
+        <input class="login-input" type="text" id="inp-user" placeholder="Digite seu usuário" autocomplete="off">
+      </div>
+    </div>
+    <div class="login-field">
+      <div class="login-label">Senha</div>
+      <div class="login-input-wrap">
+        <i class="ti ti-lock"></i>
+        <input class="login-input" type="password" id="inp-pass" placeholder="Digite sua senha" autocomplete="off">
+      </div>
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">
+      <i class="ti ti-login" style="vertical-align:-2px;margin-right:6px;"></i>
+      Entrar
+    </button>
+
+    <div class="login-hint">
+      <strong style="color:var(--color-primary-pale);">Acesso administrativo OneProcess:</strong><br>
+      usuário <code>oneprocess</code> &nbsp;·&nbsp; senha <code>op2025</code><br><br>
+      <strong style="color:var(--color-primary-pale);">Acesso cliente (semeado):</strong><br>
+      usuário <code>cliente_abc</code> &nbsp;·&nbsp; senha <code>abc123</code>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Dashboard Geral - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-dash-admin" class="screen active">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Dashboard geral</div>
+      <div class="section-sub">Visão consolidada de todos os clientes</div>
+    </div>
+    <button class="btn btn-admin" onclick="abrirModalCliente()"><i class="ti ti-plus"></i> Novo cliente</button>
+  </div>
+
+  <div class="grid4" style="margin-bottom:24px;">
+    <div class="metric metric-admin">
+      <div class="metric-icon"><i class="ti ti-building"></i></div>
+      <div class="metric-num" id="admin-m-clientes">4</div>
+      <div class="metric-lbl">Clientes ativos</div>
+    </div>
+    <div class="metric metric-total">
+      <div class="metric-icon"><i class="ti ti-robot"></i></div>
+      <div class="metric-num" id="admin-m-rpas">4</div>
+      <div class="metric-lbl">RPAs cadastrados</div>
+    </div>
+    <div class="metric metric-success">
+      <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+      <div class="metric-num" id="admin-m-ativos">3</div>
+      <div class="metric-lbl">RPAs ativos</div>
+    </div>
+    <div class="metric metric-warn">
+      <div class="metric-icon"><i class="ti ti-tool"></i></div>
+      <div class="metric-num" id="admin-m-manutencao">1</div>
+      <div class="metric-lbl">Em manutenção</div>
+    </div>
+  </div>
+
+  <div class="grid3" id="admin-clients-grid">
+    <!-- Dynamically populated at runtime or fallback mock -->
+  </div>
+</div>
+
+</body>
+</html>

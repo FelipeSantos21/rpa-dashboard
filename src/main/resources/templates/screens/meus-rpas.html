@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Meus RPAs - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-meus-rpas" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Meus RPAs</div>
+      <div class="section-sub" id="client-company-sub">Automações ativas</div>
+    </div>
+  </div>
+  <div class="grid4" style="margin-bottom:20px;">
+    <div class="metric metric-total">
+      <div class="metric-icon"><i class="ti ti-robot"></i></div>
+      <div class="metric-num" id="client-m-total">2</div>
+      <div class="metric-lbl">Cadastrados</div>
+    </div>
+    <div class="metric metric-success">
+      <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+      <div class="metric-num" id="client-m-ativos">1</div>
+      <div class="metric-lbl">Ativos</div>
+    </div>
+    <div class="metric metric-warn">
+      <div class="metric-icon"><i class="ti ti-tool"></i></div>
+      <div class="metric-num" id="client-m-manutencao">1</div>
+      <div class="metric-lbl">Em manutenção</div>
+    </div>
+    <div class="metric metric-danger">
+      <div class="metric-icon"><i class="ti ti-x"></i></div>
+      <div class="metric-num" id="client-m-inativos">0</div>
+      <div class="metric-lbl">Inativos</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-list" style="color:var(--color-primary-lilac);"></i>Lista de RPAs</div>
+    </div>
+    <div id="client-rpa-list-rows">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

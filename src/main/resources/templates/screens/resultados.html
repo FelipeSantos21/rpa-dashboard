@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Resultados - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-resultados" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Resultados</div>
+      <div class="section-sub">Execuções e desempenho analítico dos seus RPAs</div>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-title"><i class="ti ti-filter"></i>Filtros de Execução</div>
+    <div class="grid3" style="margin-bottom:14px;">
+      <div class="field" style="margin-bottom:0;">
+        <div class="field-label">RPA</div>
+        <select id="filter-rpa">
+          <option value="">Todos</option>
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <div class="field-label">Resultado</div>
+        <select id="filter-status">
+          <option value="Todos">Todos</option>
+          <option value="Sucesso">Sucesso</option>
+          <option value="Inconsistência">Inconsistência</option>
+          <option value="Erro">Erro</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0; display:flex; align-items:flex-end;">
+        <button class="btn btn-primary" onclick="loadExecutions()" style="width:100%;"><i class="ti ti-search"></i> Filtrar</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="grid4" style="margin-bottom:20px;">
+    <div class="metric metric-total">
+      <div class="metric-icon"><i class="ti ti-refresh"></i></div>
+      <div class="metric-num" id="res-m-total">5</div>
+      <div class="metric-lbl">Transações realizadas</div>
+    </div>
+    <div class="metric metric-success">
+      <div class="metric-icon"><i class="ti ti-circle-check"></i></div>
+      <div class="metric-num" id="res-m-sucesso">3</div>
+      <div class="metric-lbl">Sucessos</div>
+    </div>
+    <div class="metric metric-danger">
+      <div class="metric-icon"><i class="ti ti-alert-circle"></i></div>
+      <div class="metric-num" id="res-m-erro">2</div>
+      <div class="metric-lbl">Falhas/Erros</div>
+    </div>
+    <div class="metric metric-warn">
+      <div class="metric-icon"><i class="ti ti-percentage"></i></div>
+      <div class="metric-num" id="res-m-taxa">60%</div>
+      <div class="metric-lbl">Taxa de sucesso</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-table" style="color:var(--color-primary-lilac);"></i>Analítico de Subtasks (Tempo Real)</div>
+    </div>
+    <table id="tbl-resultados">
+      <thead><tr><th>Data Execução</th><th>RPA</th><th>Documento / ID</th><th>Mensagem de Retorno</th><th>Status</th></tr></thead>
+      <tbody>
+        <!-- Populated dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

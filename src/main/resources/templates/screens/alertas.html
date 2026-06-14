@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Configurar Alertas - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-alertas" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Configurar Alertas</div>
+      <div class="section-sub">Defina os disparos de e-mail por RPA em caso de erro</div>
+    </div>
+    <select id="alert-rpa-select" style="width:auto;min-width:240px;" onchange="loadAlertsForSelectedRpa()">
+      <!-- Dynamically populated -->
+    </select>
+  </div>
+  <div style="max-width:700px;">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title"><i class="ti ti-mail-forward"></i>Lista de Contatos de Alerta</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="title">Ativar alertas de e-mail</div>
+          <div class="sub">Se ativado, envia alertas imediatos aos emails configurados caso uma subtask falhe.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" checked>
+          <span class="tslider"></span>
+        </label>
+      </div>
+      <div style="margin-top:16px; margin-bottom:16px;">
+        <div class="field-label">Destinatários configurados</div>
+        <div id="alert-email-tags" style="min-height:50px; padding:10px; border: 1px solid var(--color-border); border-radius:var(--radius-base); background:var(--color-bg-surface); margin-bottom:10px;">
+          <!-- Dynamic tags -->
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="email" id="inp-alert-email" placeholder="Adicionar e-mail (ex: suporte@empresa.com)" style="flex:1;">
+          <button class="btn btn-ghost btn-sm" onclick="addAlertEmailTag()"><i class="ti ti-plus"></i></button>
+        </div>
+      </div>
+      <hr>
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="saveRpaAlerts()"><i class="ti ti-device-floppy"></i> Salvar Configurações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

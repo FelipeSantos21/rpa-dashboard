@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
+  <title>Catalog RPAs - Preview</title>
+</head>
+<body style="background:var(--color-bg); padding:24px; margin:0;">
+
+<div th:fragment="screen" id="screen-rpas-admin" class="screen">
+  <div class="section-header">
+    <div>
+      <div class="section-h">Catalog RPAs</div>
+      <div class="section-sub">Todos os RPAs cadastrados na plataforma</div>
+    </div>
+    <button class="btn btn-admin" onclick="abrirModalRPA()"><i class="ti ti-plus"></i> Novo RPA</button>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title"><i class="ti ti-robot" style="color:var(--color-admin);"></i> Todos os RPAs</div>
+    </div>
+    <table id="tbl-rpas-admin">
+      <thead><tr>
+        <th>Nome do RPA</th><th>Cliente</th><th>Departamento</th><th>Status</th><th>Ações</th>
+      </tr></thead>
+      <tbody>
+        <!-- Dynamically populated -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>
