@@ -3,6 +3,7 @@ package com.oneprocess.rpa.config;
 import com.oneprocess.rpa.model.*;
 import com.oneprocess.rpa.repository.*;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -21,26 +22,64 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final CadastroRpaRepository cadastroRpaRepository;
     private final RpaTaskRepository rpaTaskRepository;
     private final RpaSubtaskRepository rpaSubtaskRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public DatabaseSeeder(ClienteRepository clienteRepository,
                           UsuarioPerfilRepository usuarioPerfilRepository,
                           VinculoClienteUsuarioRepository vinculoClienteUsuarioRepository,
                           CadastroRpaRepository cadastroRpaRepository,
                           RpaTaskRepository rpaTaskRepository,
-                          RpaSubtaskRepository rpaSubtaskRepository) {
+                          RpaSubtaskRepository rpaSubtaskRepository,
+                          JdbcTemplate jdbcTemplate) {
         this.clienteRepository = clienteRepository;
         this.usuarioPerfilRepository = usuarioPerfilRepository;
         this.vinculoClienteUsuarioRepository = vinculoClienteUsuarioRepository;
         this.cadastroRpaRepository = cadastroRpaRepository;
         this.rpaTaskRepository = rpaTaskRepository;
         this.rpaSubtaskRepository = rpaSubtaskRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        // Ensure auth schema and auth.users table exist (particularly for local H2 fallback/testing)
+        try {
+            jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS auth");
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS auth.users (" +
+                    "id UUID PRIMARY KEY, " +
+                    "email VARCHAR(255) UNIQUE, " +
+                    "encrypted_password VARCHAR(255), " +
+                    "role VARCHAR(255), " +
+                    "created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()" +
+                    ")");
+        } catch (Exception e) {
+            // In PostgreSQL (Supabase), the auth schema and users table already exist.
+            // Under restricted postgres permissions, this might fail, which we safely ignore.
+        }
+
         // Check if database has already been seeded or has data
-        if (usuarioPerfilRepository.count() > 0 || clienteRepository.count() > 0) {
+        int authUsersCount = 0;
+        try {
+            authUsersCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM auth.users", Integer.class);
+        } catch (Exception e) {
+            // ignore if query failed
+        }
+        
+        if (usuarioPerfilRepository.count() > 0 && authUsersCount > 0) {
             return;
+        }
+
+        // Clean existing tables to prevent duplicate key or constraint violations during seeding
+        rpaSubtaskRepository.deleteAll();
+        rpaTaskRepository.deleteAll();
+        cadastroRpaRepository.deleteAll();
+        vinculoClienteUsuarioRepository.deleteAll();
+        usuarioPerfilRepository.deleteAll();
+        clienteRepository.deleteAll();
+        try {
+            jdbcTemplate.execute("DELETE FROM auth.users");
+        } catch (Exception e) {
+            // ignore if failed
         }
 
         // 1. Create Clients (Tenants)
@@ -71,40 +110,40 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .sobrenome("Admin")
                 .departamento("TI")
                 .username("oneprocess")
-                .password("op2025")
                 .role("admin")
                 .build();
-        usuarioPerfilRepository.save(admin);
+        admin = usuarioPerfilRepository.save(admin);
+        insertAuthUser(admin.getId(), "admin@oneprocess.com", "op2025");
 
         UsuarioPerfil userAbc = UsuarioPerfil.builder()
                 .nome("João")
                 .sobrenome("Ferreira")
                 .departamento("Financeiro")
                 .username("cliente_abc")
-                .password("abc123")
                 .role("client")
                 .build();
         userAbc = usuarioPerfilRepository.save(userAbc);
+        insertAuthUser(userAbc.getId(), "abc@cliente.com", "abc123");
 
         UsuarioPerfil userXyz = UsuarioPerfil.builder()
                 .nome("Maria")
                 .sobrenome("Fernanda")
                 .departamento("Fiscal")
                 .username("cliente_xyz")
-                .password("xyz456")
                 .role("client")
                 .build();
         userXyz = usuarioPerfilRepository.save(userXyz);
+        insertAuthUser(userXyz.getId(), "xyz@cliente.com", "xyz456");
 
         UsuarioPerfil userDelta = UsuarioPerfil.builder()
                 .nome("Carlos")
                 .sobrenome("Melo")
                 .departamento("Operações")
                 .username("cliente_delta")
-                .password("delta789")
                 .role("client")
                 .build();
         userDelta = usuarioPerfilRepository.save(userDelta);
+        insertAuthUser(userDelta.getId(), "delta@cliente.com", "delta789");
 
         // 3. Create Tenant Bindings
         vinculoClienteUsuarioRepository.save(VinculoClienteUsuario.builder().cliente(abc).usuario(userAbc).build());
@@ -339,5 +378,15 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .valorTotalDocumento(new BigDecimal("1200.50"))
                 .nomeFornecedor("Cliente Final Consumidor")
                 .build());
+    }
+
+    private void insertAuthUser(UUID id, String email, String password) {
+        String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt());
+        // Clean up any existing test user in auth.users to avoid conflict
+        jdbcTemplate.update("DELETE FROM auth.users WHERE id = ? OR email = ?", id, email);
+        jdbcTemplate.update(
+            "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
+            id, email, hashedPassword, "authenticated"
+        );
     }
 }

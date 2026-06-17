@@ -350,6 +350,102 @@ function exitSimulation() {
   }
 }
 
+function openRpaReport(rpaId) {
+  go('resultados');
+  const filter = document.getElementById('filter-rpa');
+  if (filter) {
+    filter.value = rpaId;
+  }
+  loadExecutions();
+}
+
+function showExecutionDetails(index) {
+  const item = window.currentExecutions[index];
+  if (!item) return;
+
+  const isMock = !item.subtask;
+  const sub = isMock ? item : item.subtask;
+  const task = isMock ? {
+    id: "mock-task-id",
+    nome: "mock_execution_file.json",
+    caminhoJsonDisco: "/data/mock/file.json",
+    timestampInicio: sub.dataExecucao,
+    timestampFim: sub.dataExecucao,
+    status: sub.status === 'Inconsistência' ? 'Erro' : sub.status,
+    msgErro: sub.status === 'Erro' ? sub.mensagemOnde : null,
+    totalLinhas: 1,
+    linhasSucesso: sub.status === 'Sucesso' ? 1 : 0,
+    linhasErro: sub.status !== 'Sucesso' ? 1 : 0,
+    criadoEm: sub.dataExecucao
+  } : sub.task;
+
+  const modal = document.getElementById('modal-resultado-detalhe');
+  if (!modal) return;
+  modal.classList.add('open');
+
+  const subStandardKeys = ['id', 'id_task', 'nome', 'status', 'msgErro', 'msgSefaz', 'dataEmissao', 'criadoEm'];
+  const taskStandardKeys = ['id', 'id_cadastro_rpa', 'nome', 'caminhoJsonDisco', 'timestampInicio', 'timestampFim', 'status', 'msgErro', 'totalLinhas', 'linhasSucesso', 'linhasErro', 'criadoEm'];
+
+  let subHtml = `
+    <div class="detail-section-title">Subtask (Item/Linha)</div>
+    <div class="detail-grid">
+      <div class="detail-item"><span class="detail-lbl">ID Subtask</span><span class="detail-val">${sub.id || '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Nome</span><span class="detail-val">${sub.nome || '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Status</span><span class="detail-val"><span class="badge ${sub.status === 'Sucesso' ? 'badge-success' : (sub.status === 'Inconsistência' ? 'badge-danger' : 'badge-warn')}">${sub.status}</span></span></div>
+      <div class="detail-item"><span class="detail-lbl">Data Emissão</span><span class="detail-val">${sub.dataEmissao || '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Mensagem SEFAZ</span><span class="detail-val">${sub.msgSefaz || '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Data Criação</span><span class="detail-val">${sub.criadoEm ? new Date(sub.criadoEm).toLocaleString('pt-BR') : '—'}</span></div>
+    </div>
+    <div class="detail-item-full"><span class="detail-lbl">Mensagem Erro (Se houver)</span><div class="detail-val-textarea">${sub.msgErro || '—'}</div></div>
+  `;
+
+  let taskHtml = `
+    <div class="detail-section-title">Task Relacionada (Lote/Arquivo)</div>
+    <div class="detail-grid">
+      <div class="detail-item"><span class="detail-lbl">ID Task</span><span class="detail-val">${task.id || '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Nome do Arquivo</span><span class="detail-val">${task.nome || '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Status Lote</span><span class="detail-val"><span class="badge ${task.status === 'Sucesso' ? 'badge-success' : 'badge-danger'}">${task.status}</span></span></div>
+      <div class="detail-item"><span class="detail-lbl">Caminho Disco</span><span class="detail-val"><code>${task.caminhoJsonDisco || '—'}</code></span></div>
+      <div class="detail-item"><span class="detail-lbl">Início</span><span class="detail-val">${task.timestampInicio ? new Date(task.timestampInicio).toLocaleString('pt-BR') : '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Fim</span><span class="detail-val">${task.timestampFim ? new Date(task.timestampFim).toLocaleString('pt-BR') : '—'}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Total Linhas</span><span class="detail-val">${task.totalLinhas}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Sucessos</span><span class="detail-val">${task.linhasSucesso}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Erros</span><span class="detail-val">${task.linhasErro}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Data de Criação</span><span class="detail-val">${task.criadoEm ? new Date(task.criadoEm).toLocaleString('pt-BR') : '—'}</span></div>
+    </div>
+    <div class="detail-item-full"><span class="detail-lbl">Mensagem de Erro Geral</span><div class="detail-val-textarea">${task.msgErro || '—'}</div></div>
+  `;
+
+  let customHtml = '';
+  const customItems = [];
+
+  Object.keys(sub).forEach(key => {
+    if (!subStandardKeys.includes(key) && key !== 'task') {
+      const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      customItems.push({ label, val: sub[key] });
+    }
+  });
+
+  Object.keys(task).forEach(key => {
+    if (!taskStandardKeys.includes(key) && key !== 'cadastroRpa') {
+      const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) + ' (Task)';
+      customItems.push({ label, val: task[key] });
+    }
+  });
+
+  if (customItems.length > 0) {
+    customHtml += `<div class="detail-section-title">Dados Específicos do RPA</div><div class="detail-grid">`;
+    customItems.forEach(item => {
+      customHtml += `<div class="detail-item"><span class="detail-lbl">${item.label}</span><span class="detail-val">${item.val !== null ? item.val : '—'}</span></div>`;
+    });
+    customHtml += `</div>`;
+  }
+
+  document.getElementById('detail-subtask-content').innerHTML = subHtml;
+  document.getElementById('detail-task-content').innerHTML = taskHtml;
+  document.getElementById('detail-custom-content').innerHTML = customHtml;
+}
+
 function toggleSidebar(isOpen) {
   const sidebar = document.querySelector('.sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
@@ -591,13 +687,13 @@ function renderRpasAdminData(data) {
   data.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><strong>${r.nome}</strong></td>
+      <td><strong style="cursor:pointer;color:var(--color-primary-light);text-decoration:underline;" onclick="openRpaReport('${r.id}')">${r.nome}</strong></td>
       <td><code>${r.identificadorRpa || '—'}</code></td>
       <td><span class="badge badge-info">${r.cliente.nome}</span></td>
       <td>${r.departamento || '—'}</td>
       <td><span class="badge ${r.status === 'Ativo' ? 'badge-success' : (r.status === 'Inativo' ? 'badge-danger' : 'badge-warn')}">${r.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : r.status}</span></td>
       <td>
-        <button class="btn btn-danger-ghost btn-xs" onclick="deleteRpa('${r.id}')"><i class="ti ti-trash"></i></button>
+        <button class="btn btn-danger-ghost btn-xs" onclick="event.stopPropagation(); deleteRpa('${r.id}')"><i class="ti ti-trash"></i></button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -686,7 +782,7 @@ function renderClientDashboardData(data) {
       </span>
       <div style="display:flex;gap:6px;">
         <button class="btn btn-ghost btn-sm" onclick="go('alertas')"><i class="ti ti-bell"></i></button>
-        <button class="btn btn-ghost btn-sm" onclick="go('resultados')"><i class="ti ti-chart-bar"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="openRpaReport('${r.id}')"><i class="ti ti-chart-bar"></i></button>
       </div>
     `;
     rows.appendChild(row);
@@ -893,6 +989,7 @@ function loadExecutions() {
 }
 
 function renderExecutionsData(data) {
+  window.currentExecutions = data;
   const tbody = document.querySelector('#tbl-resultados tbody');
   tbody.innerHTML = '';
 
@@ -911,8 +1008,10 @@ function renderExecutionsData(data) {
     return;
   }
 
-  data.forEach(s => {
+  data.forEach((s, index) => {
     const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => showExecutionDetails(index);
     const dtStr = new Date(s.dataExecucao).toLocaleString('pt-BR');
     
     let badge = 'badge-success';

@@ -24,34 +24,45 @@ import java.util.stream.Collectors;
 class AuthController {
     private final UsuarioPerfilRepository usuarioPerfilRepository;
     private final VinculoClienteUsuarioRepository vinculoClienteUsuarioRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         Optional<UsuarioPerfil> userOpt = usuarioPerfilRepository.findByUsername(req.getUsername().trim().toLowerCase());
-        if (userOpt.isPresent() && userOpt.get().getPassword().equals(req.getPassword())) {
+        if (userOpt.isPresent()) {
             UsuarioPerfil u = userOpt.get();
-            
-            UUID clientId = null;
-            String companyName = null;
-            
-            if ("client".equals(u.getRole())) {
-                List<VinculoClienteUsuario> links = vinculoClienteUsuarioRepository.findByUsuarioId(u.getId());
-                if (!links.isEmpty()) {
-                    Cliente c = links.get(0).getCliente();
-                    clientId = c.getId();
-                    companyName = c.getNome();
-                }
-            }
+            try {
+                String encryptedPassword = jdbcTemplate.queryForObject(
+                    "SELECT encrypted_password FROM auth.users WHERE id = ?",
+                    String.class,
+                    u.getId()
+                );
+                if (encryptedPassword != null && org.mindrot.jbcrypt.BCrypt.checkpw(req.getPassword(), encryptedPassword)) {
+                    UUID clientId = null;
+                    String companyName = null;
+                    
+                    if ("client".equals(u.getRole())) {
+                        List<VinculoClienteUsuario> links = vinculoClienteUsuarioRepository.findByUsuarioId(u.getId());
+                        if (!links.isEmpty()) {
+                            Cliente c = links.get(0).getCliente();
+                            clientId = c.getId();
+                            companyName = c.getNome();
+                        }
+                    }
 
-            return ResponseEntity.ok(LoginResponse.builder()
-                    .id(u.getId())
-                    .nome(u.getNome())
-                    .sobrenome(u.getSobrenome())
-                    .username(u.getUsername())
-                    .role(u.getRole())
-                    .clientId(clientId)
-                    .companyName(companyName)
-                    .build());
+                    return ResponseEntity.ok(LoginResponse.builder()
+                            .id(u.getId())
+                            .nome(u.getNome())
+                            .sobrenome(u.getSobrenome())
+                            .username(u.getUsername())
+                            .role(u.getRole())
+                            .clientId(clientId)
+                            .companyName(companyName)
+                            .build());
+                }
+            } catch (Exception e) {
+                // Auth user check failed or not found in auth.users
+            }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Usuário ou senha incorretos"));
     }
@@ -181,6 +192,7 @@ class ClienteController {
     private final ClienteRepository clienteRepository;
     private final UsuarioPerfilRepository usuarioPerfilRepository;
     private final VinculoClienteUsuarioRepository vinculoClienteUsuarioRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @GetMapping
     public List<Cliente> getAll() {
@@ -206,10 +218,18 @@ class ClienteController {
                     .sobrenome("Contato")
                     .departamento("Geral")
                     .username(req.getUsername().trim().toLowerCase())
-                    .password(req.getPassword() != null ? req.getPassword() : "123456")
                     .role("client")
                     .build();
             u = usuarioPerfilRepository.save(u);
+
+            String rawPassword = req.getPassword() != null ? req.getPassword() : "123456";
+            String encryptedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(rawPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
+            String email = req.getUsername().trim().toLowerCase() + "@oneprocess.com";
+            
+            jdbcTemplate.update(
+                "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
+                u.getId(), email, encryptedPassword, "authenticated"
+            );
 
             vinculoClienteUsuarioRepository.save(VinculoClienteUsuario.builder()
                     .cliente(c)
@@ -226,6 +246,11 @@ class ClienteController {
         for (VinculoClienteUsuario link : links) {
             vinculoClienteUsuarioRepository.delete(link);
             usuarioPerfilRepository.delete(link.getUsuario());
+            try {
+                jdbcTemplate.update("DELETE FROM auth.users WHERE id = ?", link.getUsuario().getId());
+            } catch (Exception e) {
+                // Ignore if not present
+            }
         }
         clienteRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Cliente removido com sucesso"));
@@ -345,15 +370,18 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
 
         return subtasks.stream()
             .filter(s -> status == null || "Todos".equalsIgnoreCase(status) || s.getStatus().equalsIgnoreCase(status))
-            .map(s -> Map.of(
-                "dataExecucao", s.getTask().getTimestampInicio(),
-                "numeroDocumento", s.getNumeroDocumento() != null ? s.getNumeroDocumento() : "N/A",
-                "mensagemOnde", s.getMsgSefaz() != null ? s.getMsgSefaz() : (s.getMsgErro() != null ? s.getMsgErro() : "Processamento concluído"),
-                "status", s.getStatus(),
-                "rpaNome", s.getTask().getCadastroRpa().getNome(),
-                "valor", s.getValorTotalDocumento() != null ? s.getValorTotalDocumento() : BigDecimal.ZERO,
-                "fornecedor", s.getNomeFornecedor() != null ? s.getNomeFornecedor() : "N/A"
-            ))
+            .map(s -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("dataExecucao", s.getTask().getTimestampInicio());
+                map.put("numeroDocumento", s.getNumeroDocumento() != null ? s.getNumeroDocumento() : "N/A");
+                map.put("mensagemOnde", s.getMsgSefaz() != null ? s.getMsgSefaz() : (s.getMsgErro() != null ? s.getMsgErro() : "Processamento concluído"));
+                map.put("status", s.getStatus());
+                map.put("rpaNome", s.getTask().getCadastroRpa().getNome());
+                map.put("valor", s.getValorTotalDocumento() != null ? s.getValorTotalDocumento() : BigDecimal.ZERO);
+                map.put("fornecedor", s.getNomeFornecedor() != null ? s.getNomeFornecedor() : "N/A");
+                map.put("subtask", s);
+                return map;
+            })
             .sorted((a, b) -> ((OffsetDateTime) b.get("dataExecucao")).compareTo((OffsetDateTime) a.get("dataExecucao")))
             .collect(Collectors.toList());
     }
