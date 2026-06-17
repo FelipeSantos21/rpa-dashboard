@@ -6,6 +6,7 @@
 -- Limpeza preventiva para reconstrução do banco (Rebuild)
 DROP TABLE IF EXISTS public.rpa_sja_001_subtask CASCADE;
 DROP TABLE IF EXISTS public.rpa_sja_001_task CASCADE;
+DROP TABLE IF EXISTS public.cadastro_rpa_emails_alerta CASCADE;
 DROP TABLE IF EXISTS public.cadastro_rpa CASCADE;
 DROP TABLE IF EXISTS public.vinculo_cliente_usuario CASCADE;
 DROP TABLE IF EXISTS public.usuario_perfil CASCADE;
@@ -58,8 +59,14 @@ CREATE TABLE public.cadastro_rpa (
     regras TEXT,
     riscos TEXT,
     observacoes TEXT,
-    emails_alerta TEXT[], -- Emails para alertas do robo
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabela de coleção de e-mails para alertas do RPA (mapeamento @ElementCollection no JPA)
+CREATE TABLE public.cadastro_rpa_emails_alerta (
+    id_cadastro_rpa UUID NOT NULL REFERENCES public.cadastro_rpa(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id_cadastro_rpa, email)
 );
 
 -- -----------------------------------------------------------------------------
@@ -88,7 +95,7 @@ CREATE TABLE public.rpa_sja_001_subtask (
     status VARCHAR(50) NOT NULL,
     msg_erro TEXT,
     msg_sefaz VARCHAR(255),
-    
+
     -- Dados de Negocio (ERP)
     numero_documento VARCHAR(50),
     serie_documento VARCHAR(20),
@@ -96,7 +103,7 @@ CREATE TABLE public.rpa_sja_001_subtask (
     valor_total_documento NUMERIC(15, 2),
     codigo_fornecedor VARCHAR(50),
     nome_fornecedor VARCHAR(255),
-    
+
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

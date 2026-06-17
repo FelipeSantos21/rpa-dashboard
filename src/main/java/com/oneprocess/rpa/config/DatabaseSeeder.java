@@ -108,7 +108,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         delta = clienteRepository.save(delta);
 
         // 2. Create User Profiles (with credentials)
+        UUID adminId = UUID.randomUUID();
+        insertAuthUser(adminId, "admin@oneprocess.com", "op2025");
         UsuarioPerfil admin = UsuarioPerfil.builder()
+                .id(adminId)
                 .nome("OneProcess")
                 .sobrenome("Admin")
                 .departamento("TI")
@@ -116,9 +119,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .role("admin")
                 .build();
         admin = usuarioPerfilRepository.save(admin);
-        insertAuthUser(admin.getId(), "admin@oneprocess.com", "op2025");
 
+        UUID userAbcId = UUID.randomUUID();
+        insertAuthUser(userAbcId, "abc@cliente.com", "abc123");
         UsuarioPerfil userAbc = UsuarioPerfil.builder()
+                .id(userAbcId)
                 .nome("João")
                 .sobrenome("Ferreira")
                 .departamento("Financeiro")
@@ -126,9 +131,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .role("client")
                 .build();
         userAbc = usuarioPerfilRepository.save(userAbc);
-        insertAuthUser(userAbc.getId(), "abc@cliente.com", "abc123");
 
+        UUID userXyzId = UUID.randomUUID();
+        insertAuthUser(userXyzId, "xyz@cliente.com", "xyz456");
         UsuarioPerfil userXyz = UsuarioPerfil.builder()
+                .id(userXyzId)
                 .nome("Maria")
                 .sobrenome("Fernanda")
                 .departamento("Fiscal")
@@ -136,9 +143,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .role("client")
                 .build();
         userXyz = usuarioPerfilRepository.save(userXyz);
-        insertAuthUser(userXyz.getId(), "xyz@cliente.com", "xyz456");
 
+        UUID userDeltaId = UUID.randomUUID();
+        insertAuthUser(userDeltaId, "delta@cliente.com", "delta789");
         UsuarioPerfil userDelta = UsuarioPerfil.builder()
+                .id(userDeltaId)
                 .nome("Carlos")
                 .sobrenome("Melo")
                 .departamento("Operações")
@@ -146,7 +155,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .role("client")
                 .build();
         userDelta = usuarioPerfilRepository.save(userDelta);
-        insertAuthUser(userDelta.getId(), "delta@cliente.com", "delta789");
 
         // 3. Create Tenant Bindings
         vinculoClienteUsuarioRepository.save(VinculoClienteUsuario.builder().cliente(abc).usuario(userAbc).build());

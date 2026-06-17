@@ -205,32 +205,59 @@ class ClienteController {
             return ResponseEntity.badRequest().body(Map.of("message", "Nome da empresa é obrigatório"));
         }
 
+        String username = null;
+        if (req.getUsername() != null && !req.getUsername().trim().isEmpty()) {
+            username = req.getUsername().trim().toLowerCase();
+            if (usuarioPerfilRepository.findByUsername(username).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "O nome de usuário '" + username + "' já está em uso."));
+            }
+        }
+
+        String cnpj = req.getCnpj();
+        if (cnpj != null && cnpj.trim().isEmpty()) {
+            cnpj = null;
+        }
+
+        String razaoSocial = req.getRazaoSocial();
+        if (razaoSocial != null && razaoSocial.trim().isEmpty()) {
+            razaoSocial = null;
+        }
+
         Cliente c = Cliente.builder()
                 .nome(req.getNome())
-                .razaoSocial(req.getRazaoSocial())
-                .cnpj(req.getCnpj())
+                .razaoSocial(razaoSocial)
+                .cnpj(cnpj)
                 .build();
         c = clienteRepository.save(c);
 
-        if (req.getUsername() != null && !req.getUsername().trim().isEmpty()) {
+        if (username != null) {
+            UUID newUserId = UUID.randomUUID();
+            
+            String rawPassword = req.getPassword() != null ? req.getPassword() : "123456";
+            String encryptedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(rawPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
+            String email = username + "@oneprocess.com";
+            
+            // Clean up any orphaned credentials for this email before inserting (avoids conflict from prior failed attempts)
+            jdbcTemplate.update("DELETE FROM auth.users WHERE email = ?", email);
+
+            // 1. Insert credentials in auth.users first to satisfy foreign key constraint on usuario_perfil(id)
+            jdbcTemplate.update(
+                "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
+                newUserId, email, encryptedPassword, "authenticated"
+            );
+
+            // 2. Insert profile using the exact same ID
             UsuarioPerfil u = UsuarioPerfil.builder()
+                    .id(newUserId)
                     .nome(req.getResponsavel() != null ? req.getResponsavel() : req.getNome())
                     .sobrenome("Contato")
                     .departamento("Geral")
-                    .username(req.getUsername().trim().toLowerCase())
+                    .username(username)
                     .role("client")
                     .build();
             u = usuarioPerfilRepository.save(u);
 
-            String rawPassword = req.getPassword() != null ? req.getPassword() : "123456";
-            String encryptedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(rawPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
-            String email = req.getUsername().trim().toLowerCase() + "@oneprocess.com";
-            
-            jdbcTemplate.update(
-                "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
-                u.getId(), email, encryptedPassword, "authenticated"
-            );
-
+            // 3. Create the client-user tenant binding
             vinculoClienteUsuarioRepository.save(VinculoClienteUsuario.builder()
                     .cliente(c)
                     .usuario(u)
@@ -256,6 +283,159 @@ class ClienteController {
         return ResponseEntity.ok(Map.of("message", "Cliente removido com sucesso"));
     }
 }
+
+// =========================================================================
+// 3.5. USUARIO CONTROLLER
+// =========================================================================
+
+@RestController
+@RequestMapping("/api/usuarios")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+class UsuarioController {
+    private final UsuarioPerfilRepository usuarioPerfilRepository;
+    private final VinculoClienteUsuarioRepository vinculoClienteUsuarioRepository;
+    private final ClienteRepository clienteRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @GetMapping
+    public List<Map<String, Object>> getAll() {
+        List<UsuarioPerfil> perfis = usuarioPerfilRepository.findAll();
+        List<Map<String, Object>> res = new ArrayList<>();
+        
+        for (UsuarioPerfil u : perfis) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", u.getId());
+            map.put("nome", u.getNome());
+            map.put("sobrenome", u.getSobrenome());
+            map.put("departamento", u.getDepartamento());
+            map.put("username", u.getUsername());
+            map.put("role", u.getRole());
+            map.put("criadoEm", u.getCriadoEm());
+            
+            // Get linked clients
+            List<VinculoClienteUsuario> vinculos = vinculoClienteUsuarioRepository.findByUsuario(u);
+            List<Map<String, Object>> clientes = new ArrayList<>();
+            for (VinculoClienteUsuario v : vinculos) {
+                Map<String, Object> cliMap = new HashMap<>();
+                cliMap.put("id", v.getCliente().getId());
+                cliMap.put("nome", v.getCliente().getNome());
+                clientes.add(cliMap);
+            }
+            map.put("clientes", clientes);
+            res.add(map);
+        }
+        return res;
+    }
+
+    @PostMapping
+    public ResponseEntity<?> create(@RequestBody CreateUserRequest req) {
+        if (req.getUsername() == null || req.getUsername().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username é obrigatório"));
+        }
+        if (req.getNome() == null || req.getNome().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Nome é obrigatório"));
+        }
+        
+        String username = req.getUsername().trim().toLowerCase();
+        if (usuarioPerfilRepository.findByUsername(username).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "O nome de usuário '" + username + "' já está em uso."));
+        }
+
+        UUID newUserId = UUID.randomUUID();
+        String rawPassword = req.getPassword() != null ? req.getPassword() : "123456";
+        String encryptedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(rawPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
+        String email = username + "@oneprocess.com";
+
+        // Clean up any orphans
+        jdbcTemplate.update("DELETE FROM auth.users WHERE email = ?", email);
+
+        // 1. auth.users
+        jdbcTemplate.update(
+            "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
+            newUserId, email, encryptedPassword, "authenticated"
+        );
+
+        // 2. usuario_perfil
+        UsuarioPerfil u = UsuarioPerfil.builder()
+                .id(newUserId)
+                .nome(req.getNome())
+                .sobrenome(req.getSobrenome())
+                .departamento(req.getDepartamento())
+                .username(username)
+                .role(req.getRole() != null ? req.getRole() : "client")
+                .build();
+        u = usuarioPerfilRepository.save(u);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(u);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable UUID id) {
+        UsuarioPerfil u = usuarioPerfilRepository.findById(id).orElse(null);
+        if (u == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Delete links
+        List<VinculoClienteUsuario> links = vinculoClienteUsuarioRepository.findByUsuario(u);
+        for (VinculoClienteUsuario link : links) {
+            vinculoClienteUsuarioRepository.delete(link);
+        }
+
+        // Delete profile
+        usuarioPerfilRepository.delete(u);
+
+        // Delete credentials
+        try {
+            jdbcTemplate.update("DELETE FROM auth.users WHERE id = ?", id);
+        } catch (Exception e) {
+            // ignore
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Usuário removido com sucesso"));
+    }
+
+    @PostMapping("/{id}/vinculos")
+    public ResponseEntity<?> updateVinculos(@PathVariable UUID id, @RequestBody List<UUID> clientIds) {
+        UsuarioPerfil u = usuarioPerfilRepository.findById(id).orElse(null);
+        if (u == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 1. Delete existing links
+        List<VinculoClienteUsuario> existing = vinculoClienteUsuarioRepository.findByUsuario(u);
+        for (VinculoClienteUsuario v : existing) {
+            vinculoClienteUsuarioRepository.delete(v);
+        }
+
+        // 2. Create new links
+        if (clientIds != null) {
+            for (UUID cid : clientIds) {
+                Cliente c = clienteRepository.findById(cid).orElse(null);
+                if (c != null) {
+                    vinculoClienteUsuarioRepository.save(VinculoClienteUsuario.builder()
+                            .cliente(c)
+                            .usuario(u)
+                            .build());
+                }
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Vínculos atualizados com sucesso"));
+    }
+}
+
+@Data
+class CreateUserRequest {
+    private String username;
+    private String password;
+    private String nome;
+    private String sobrenome;
+    private String departamento;
+    private String role;
+}
+
 
 @Data
 class CreateClientRequest {
