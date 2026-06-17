@@ -7,7 +7,7 @@ COPY pom.xml .
 # Pre-fetch dependencies to speed up subsequent builds
 RUN mvn dependency:go-offline -B
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn clean package
 
 # ==========================================
 # Runtime Stage

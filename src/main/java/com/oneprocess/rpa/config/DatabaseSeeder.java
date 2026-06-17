@@ -13,7 +13,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
 
+import org.springframework.context.annotation.Profile;
+
 @Component
+@Profile("!prod")
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final ClienteRepository clienteRepository;

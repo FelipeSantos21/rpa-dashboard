@@ -18,6 +18,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=dtKlOHK6H0HOJnKRS8KUQQRM
       - SPRING_DATASOURCE_DRIVER=org.postgresql.Driver
       - SPRING_JPA_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
     restart: unless-stopped
 
 networks:

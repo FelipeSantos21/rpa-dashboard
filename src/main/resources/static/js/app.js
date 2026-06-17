@@ -1,6 +1,39 @@
-/* ═════════════════════════════════════════════════════════════
-   1. OFFLINE DETECTOR & SESSION MANAGEMENT
-   ═════════════════════════════════════════════════════════════ */
+// Intercept all outgoing fetch API calls to inject the Authorization Bearer token (User UUID)
+(function() {
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    
+    // Ensure headers support string assignment
+    if (!(options.headers instanceof Headers)) {
+      if (Array.isArray(options.headers)) {
+        const headersObj = {};
+        options.headers.forEach(h => { headersObj[h[0]] = h[1]; });
+        options.headers = headersObj;
+      }
+    }
+    
+    try {
+      const sessionStr = sessionStorage.getItem("op_session");
+      if (sessionStr) {
+        const sess = JSON.parse(sessionStr);
+        if (sess && sess.id) {
+          if (options.headers instanceof Headers) {
+            options.headers.set("Authorization", "Bearer " + sess.id);
+          } else {
+            options.headers["Authorization"] = "Bearer " + sess.id;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error setting Auth header on fetch:", e);
+    }
+    
+    return originalFetch(url, options);
+  };
+})();
+
 let session = null;
 let currentAlertEmails = [];
 let currentAlertRpaId = null;
