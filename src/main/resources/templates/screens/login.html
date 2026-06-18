@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}">
-  <link rel="icon" type="image/svg+xml" href="../../static/favicon.svg" th:href="@{/favicon.svg}">
+  <link rel="icon" type="image/x-icon" href="../../static/favicon.ico" th:href="@{/favicon.ico}">
   <title>Login - Preview</title>
 </head>
 <body style="background:var(--color-bg); display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0;">
@@ -11,17 +11,7 @@
 <div th:fragment="login" class="login-wrap" id="login-wrap" style="display:flex;">
   <div class="login-box">
     <div class="login-logo">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#opGradLogin)" />
-        <path d="M2 17L12 22L22 17" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M2 12L12 17L22 12" stroke="url(#opGradLogin)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        <defs>
-          <linearGradient id="opGradLogin" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#5f5fe8" />
-            <stop offset="1" stop-color="#2c2cb5" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <img src="../../static/oneprocess.png" th:src="@{/oneprocess.png}" alt="OneProcess Logo">
       <span>OneProcess</span>
     </div>
     <div class="login-title">Bem-vindo de volta</div>

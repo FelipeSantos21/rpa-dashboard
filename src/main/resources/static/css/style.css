@@ -249,9 +249,11 @@ body {
   margin-bottom: var(--space-2xl);
 }
 
-.login-logo svg {
+.login-logo svg,
+.login-logo img {
   width: 38px;
   height: 38px;
+  object-fit: contain;
 }
 
 .login-logo span {
@@ -401,9 +403,11 @@ body {
   gap: var(--space-sm);
 }
 
-.sidebar-logo svg {
+.sidebar-logo svg,
+.sidebar-logo img {
   width: 28px;
   height: 28px;
+  object-fit: contain;
 }
 
 .sidebar-logo span {
