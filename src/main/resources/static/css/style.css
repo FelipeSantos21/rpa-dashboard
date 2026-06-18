@@ -249,11 +249,18 @@ body {
   margin-bottom: var(--space-2xl);
 }
 
-.login-logo svg,
-.login-logo img {
+.login-logo svg {
   width: 38px;
   height: 38px;
   object-fit: contain;
+}
+
+.login-logo img {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .login-logo span {
@@ -400,14 +407,21 @@ body {
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  justify-content: center;
 }
 
-.sidebar-logo svg,
-.sidebar-logo img {
+.sidebar-logo svg {
   width: 28px;
   height: 28px;
   object-fit: contain;
+}
+
+.sidebar-logo img {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .sidebar-logo span {
