@@ -271,7 +271,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .status("Erro")
                 .totalLinhas(5)
                 .linhasSucesso(3)
-                .linhasErro(2)
+                .linhasErro(1)
+                .linhasNaoEncontrado(1)
                 .timestampInicio(OffsetDateTime.parse("2026-05-26T08:14:00-03:00"))
                 .timestampFim(OffsetDateTime.parse("2026-05-26T08:26:00-03:00"))
                 .build();
@@ -295,7 +296,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .id(UUID.randomUUID())
                 .task(task1)
                 .nome("Linha 2")
-                .status("Inconsistência")
+                .status("Não Encontrado")
                 .msgErro("CNPJ do fornecedor inválido na base do ERP")
                 .numeroDocumento("NF-000413")
                 .serieDocumento("1")

@@ -25,7 +25,7 @@ public class RpaSubtask {
     private String nome;
     
     @Column(nullable = false)
-    private String status; // "Sucesso", "Inconsistência", "Erro"
+    private String status; // "Sucesso", "Não Encontrado", "Erro"
     
     @Column(name = "msg_erro", columnDefinition = "TEXT")
     private String msgErro;

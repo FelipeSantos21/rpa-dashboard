@@ -85,6 +85,7 @@ CREATE TABLE public.rpa_sja_001_task (
     total_linhas INT DEFAULT 0,
     linhas_sucesso INT DEFAULT 0,
     linhas_erro INT DEFAULT 0,
+    linhas_nao_encontrado INT DEFAULT 0,
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

@@ -307,7 +307,7 @@ paths:
         - name: status
           in: query
           required: false
-          description: Filter by status (e.g. Sucesso, Erro, Inconsistência)
+          description: Filter by status (e.g. Sucesso, Erro, Não Encontrado)
           schema:
             type: string
       responses:
