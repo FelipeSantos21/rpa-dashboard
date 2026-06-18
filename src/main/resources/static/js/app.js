@@ -432,7 +432,7 @@ function showExecutionDetails(index) {
   if (!modal) return;
   modal.classList.add('open');
 
-  const subStandardKeys = ['id', 'id_task', 'nome', 'status', 'msgErro', 'msgSefaz', 'dataEmissao', 'criadoEm'];
+  const subStandardKeys = ['id', 'id_task', 'nome', 'status', 'msgErro', 'dataEmissao', 'criadoEm'];
   const taskStandardKeys = ['id', 'id_cadastro_rpa', 'nome', 'caminhoJsonDisco', 'timestampInicio', 'timestampFim', 'status', 'msgErro', 'totalLinhas', 'linhasSucesso', 'linhasErro', 'criadoEm'];
 
   let subHtml = `
@@ -442,7 +442,6 @@ function showExecutionDetails(index) {
       <div class="detail-item"><span class="detail-lbl">Nome</span><span class="detail-val">${sub.nome || '—'}</span></div>
       <div class="detail-item"><span class="detail-lbl">Status</span><span class="detail-val"><span class="badge ${sub.status === 'Sucesso' ? 'badge-success' : (sub.status === 'Inconsistência' ? 'badge-danger' : 'badge-warn')}">${sub.status}</span></span></div>
       <div class="detail-item"><span class="detail-lbl">Data Emissão</span><span class="detail-val">${sub.dataEmissao || '—'}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Mensagem SEFAZ</span><span class="detail-val">${sub.msgSefaz || '—'}</span></div>
       <div class="detail-item"><span class="detail-lbl">Data Criação</span><span class="detail-val">${sub.criadoEm ? new Date(sub.criadoEm).toLocaleString('pt-BR') : '—'}</span></div>
     </div>
     <div class="detail-item-full"><span class="detail-lbl">Mensagem Erro (Se houver)</span><div class="detail-val-textarea">${sub.msgErro || '—'}</div></div>

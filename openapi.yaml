@@ -553,8 +553,6 @@ components:
           type: string
         msgErro:
           type: string
-        msgSefaz:
-          type: string
         numeroDocumento:
           type: string
         serieDocumento:
@@ -614,8 +612,6 @@ components:
         status:
           type: string
         msgErro:
-          type: string
-        msgSefaz:
           type: string
         numeroDocumento:
           type: string

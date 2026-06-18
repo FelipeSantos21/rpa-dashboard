@@ -94,7 +94,6 @@ CREATE TABLE public.rpa_sja_001_subtask (
     nome VARCHAR(255),
     status VARCHAR(50) NOT NULL,
     msg_erro TEXT,
-    msg_sefaz VARCHAR(255),
 
     -- Dados de Negocio (ERP)
     numero_documento VARCHAR(50),

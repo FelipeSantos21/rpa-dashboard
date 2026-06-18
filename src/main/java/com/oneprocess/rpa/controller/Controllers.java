@@ -554,7 +554,7 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
                 Map<String, Object> map = new HashMap<>();
                 map.put("dataExecucao", s.getTask().getTimestampInicio());
                 map.put("numeroDocumento", s.getNumeroDocumento() != null ? s.getNumeroDocumento() : "N/A");
-                map.put("mensagemOnde", s.getMsgSefaz() != null ? s.getMsgSefaz() : (s.getMsgErro() != null ? s.getMsgErro() : "Processamento concluído"));
+                map.put("mensagemOnde", s.getMsgErro() != null ? s.getMsgErro() : "Processamento concluído");
                 map.put("status", s.getStatus());
                 map.put("rpaNome", s.getTask().getCadastroRpa().getNome());
                 map.put("valor", s.getValorTotalDocumento() != null ? s.getValorTotalDocumento() : BigDecimal.ZERO);
@@ -628,7 +628,6 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
         subtask.setNome(req.getNome());
         subtask.setStatus(req.getStatus());
         subtask.setMsgErro(req.getMsgErro());
-        subtask.setMsgSefaz(req.getMsgSefaz());
         subtask.setNumeroDocumento(req.getNumeroDocumento());
         subtask.setSerieDocumento(req.getSerieDocumento());
         subtask.setDataEmissao(req.getDataEmissao());
@@ -687,7 +686,6 @@ class CreateSubtaskRequest {
     private String nome;
     private String status;
     private String msgErro;
-    private String msgSefaz;
     private String numeroDocumento;
     private String serieDocumento;
     private LocalDate dataEmissao;

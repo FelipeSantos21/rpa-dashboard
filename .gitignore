@@ -39,4 +39,5 @@ Thumbs.db
 *.tmp
 *.bak
 *.swp
+/.env.prd
 /.env
