@@ -84,8 +84,16 @@ public class SecurityTests {
                 .build();
         cliente = clienteRepository.save(cliente);
 
-        // 2. Seed a test admin profile
+        // 2. Seed a test admin profile and user credentials in auth.users
+        UUID adminId = UUID.randomUUID();
+        String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw("secret123", org.mindrot.jbcrypt.BCrypt.gensalt());
+        jdbcTemplate.update(
+            "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
+            adminId, "admin@test.com", hashedPassword, "authenticated"
+        );
+
         adminUser = UsuarioPerfil.builder()
+                .id(adminId)
                 .nome("Admin")
                 .sobrenome("Test")
                 .departamento("IT")
@@ -93,13 +101,6 @@ public class SecurityTests {
                 .role("admin")
                 .build();
         adminUser = usuarioPerfilRepository.save(adminUser);
-
-        // 3. Seed the user credentials in auth.users
-        String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw("secret123", org.mindrot.jbcrypt.BCrypt.gensalt());
-        jdbcTemplate.update(
-            "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
-            adminUser.getId(), "admin@test.com", hashedPassword, "authenticated"
-        );
 
         // 4. Seed an RPA
         rpa = CadastroRpa.builder()

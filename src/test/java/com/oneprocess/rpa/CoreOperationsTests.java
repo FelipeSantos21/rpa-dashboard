@@ -75,7 +75,14 @@ public class CoreOperationsTests {
         jdbcTemplate.execute("DELETE FROM auth.users");
 
         // Seed default admin for headers
+        UUID adminId = UUID.randomUUID();
+        jdbcTemplate.update(
+            "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
+            adminId, "admin@test.com", "dummy_pass", "authenticated"
+        );
+
         adminUser = UsuarioPerfil.builder()
+                .id(adminId)
                 .nome("Admin")
                 .sobrenome("Test")
                 .departamento("IT")
