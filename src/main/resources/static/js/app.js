@@ -300,13 +300,19 @@ function bootstrapApp() {
     tb.className = 'topbar-badge tb-admin';
     tb.innerHTML = '<i class="ti ti-shield-check"></i> Admin OneProcess';
     btnNovo.style.display = 'inline-flex';
-    go('dash-admin');
   } else {
     tb.className = 'topbar-badge tb-client';
     tb.innerHTML = '<i class="ti ti-building"></i> ' + session.companyName;
     btnNovo.style.display = 'none';
     document.getElementById('client-company-sub').textContent = session.companyName + ' — automações multi-tenant';
-    go('meus-rpas');
+  }
+
+  // Handle routing on boot
+  if (window.location.hash && window.location.hash.startsWith('#/')) {
+    handleRouting();
+  } else {
+    const defaultScreen = session.role === 'admin' ? 'dash-admin' : 'meus-rpas';
+    window.location.hash = '#/' + defaultScreen;
   }
 }
 
@@ -400,12 +406,7 @@ function exitSimulation() {
 }
 
 function openRpaReport(rpaId) {
-  go('resultados');
-  const filter = document.getElementById('filter-rpa');
-  if (filter) {
-    filter.value = rpaId;
-  }
-  loadExecutions();
+  go('resultados', { rpaId: rpaId });
 }
 
 function showSubtaskDetails(taskIndex, subtaskIndex) {
@@ -493,7 +494,57 @@ function toggleSidebar(isOpen) {
   }
 }
 
-function go(id) {
+function go(id, params) {
+  let hash = '#/' + id;
+  if (params) {
+    const query = Object.keys(params).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
+    if (query) hash += '?' + query;
+  }
+  window.location.hash = hash;
+}
+
+function handleRouting() {
+  if (!session) return;
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#/')) {
+    const defaultScreen = session.role === 'admin' ? 'dash-admin' : 'meus-rpas';
+    window.location.hash = '#/' + defaultScreen;
+    return;
+  }
+
+  const pathPart = hash.substring(2); // remove '#/'
+  const [screenId, queryStr] = pathPart.split('?');
+
+  const params = {};
+  if (queryStr) {
+    queryStr.split('&').forEach(pair => {
+      const [k, v] = pair.split('=');
+      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || '');
+    });
+  }
+
+  navigateToScreen(screenId, params);
+}
+
+window.addEventListener('hashchange', handleRouting);
+
+function navigateToScreen(id, params) {
+  const currentActiveScreen = document.querySelector('.screen.active');
+  const currentScreenId = currentActiveScreen ? currentActiveScreen.id.replace('screen-', '') : '';
+
+  if (id === currentScreenId) {
+    if (id === 'resultados') {
+      const filterRpa = document.getElementById('filter-rpa');
+      const filterStatus = document.getElementById('filter-status');
+      if (filterRpa && filterStatus) {
+        filterRpa.value = params.rpaId || '';
+        filterStatus.value = params.status || 'Todos';
+        loadExecutions();
+        return;
+      }
+    }
+  }
+
   toggleSidebar(false);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -525,6 +576,11 @@ function go(id) {
     window.resultadosPollIntervalId = null;
   }
 
+  // Apply screen-specific parameters/filters if present
+  if (id === 'resultados') {
+    window.pendingResultsFilters = params;
+  }
+
   // Data fetching routing
   if (id === 'dash-admin') loadAdminDashboard();
   else if (id === 'clientes') loadClientes();
@@ -539,6 +595,15 @@ function go(id) {
       loadExecutions();
     }, 3000);
   }
+}
+
+function applyExecutionsFilter() {
+  const rpaId = document.getElementById('filter-rpa').value;
+  const status = document.getElementById('filter-status').value;
+  const params = {};
+  if (rpaId) params.rpaId = rpaId;
+  if (status && status !== 'Todos') params.status = status;
+  go('resultados', params);
 }
 
 /* ═════════════════════════════════════════════════════════════
@@ -1218,6 +1283,18 @@ function renderResultadosViewDropdown(rpas) {
     opt.textContent = r.nome;
     filter.appendChild(opt);
   });
+
+  // Apply pending URL parameters if any
+  if (window.pendingResultsFilters) {
+    if (window.pendingResultsFilters.rpaId) {
+      filter.value = window.pendingResultsFilters.rpaId;
+    }
+    if (window.pendingResultsFilters.status) {
+      document.getElementById('filter-status').value = window.pendingResultsFilters.status;
+    }
+    window.pendingResultsFilters = null; // consume filters
+  }
+
   loadExecutions();
 }
 
