@@ -307,7 +307,7 @@ paths:
         - name: status
           in: query
           required: false
-          description: Filter by status (e.g. Sucesso, Erro, Inconsistência)
+          description: Filter by status (e.g. Sucesso, Erro, Não Encontrado)
           schema:
             type: string
       responses:
@@ -553,8 +553,6 @@ components:
           type: string
         msgErro:
           type: string
-        msgSefaz:
-          type: string
         numeroDocumento:
           type: string
         serieDocumento:
@@ -614,8 +612,6 @@ components:
         status:
           type: string
         msgErro:
-          type: string
-        msgSefaz:
           type: string
         numeroDocumento:
           type: string

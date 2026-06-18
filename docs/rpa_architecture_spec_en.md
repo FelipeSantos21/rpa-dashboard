@@ -20,7 +20,7 @@ The database uses deterministic UUIDs (generated via SHA-256 hashing in the Java
   - **Dashboard Optimization:** Contains denormalized counters (`total_linhas`, `linhas_sucesso`, `linhas_erro`) updated via database triggers to ensure dashboard queries render instantly without heavy aggregation.
 - **`rpa_sja_001_subtask` (Unit/Row Level):** Records the outcome of individual operations (e.g., a single invoice processed in the ERP).
   - **Idempotency:** The Primary Key (`id`) is derived from `Hash(task_id + document_number + vendor)`.
-  - **ERP Context:** Captures specific business data (Invoice Number, Emission Date, Total Value, Vendor) and SEFAZ return messages.
+  - **ERP Context:** Captures specific business data (Invoice Number, Emission Date, Total Value, Vendor).
 
 ## 3. System Interactions & Interfaces
 

@@ -102,7 +102,7 @@ function initMockData() {
   if (!localStorage.getItem(MOCK_SUBTASKS_KEY)) {
     const subtasks = [
       { dataExecucao: new Date(Date.now() - 5 * 60000).toISOString(), numeroDocumento: "NF-001024", mensagemOnde: "Autorizada pelo portal SEFAZ", status: "Sucesso", rpaNome: "Leitura Planilha NFe", valor: 12500.00, fornecedor: "Metalúrgica Central", rpaId: "r1111111-1111-1111-1111-111111111111", clientId: "33333333-3333-3333-3333-333333333333" },
-      { dataExecucao: new Date(Date.now() - 15 * 60000).toISOString(), numeroDocumento: "NF-001023", mensagemOnde: "Erro na validação do CNPJ do fornecedor", status: "Inconsistência", rpaNome: "Leitura Planilha NFe", valor: 340.50, fornecedor: "Papelaria Express", rpaId: "r1111111-1111-1111-1111-111111111111", clientId: "33333333-3333-3333-3333-333333333333" },
+      { dataExecucao: new Date(Date.now() - 15 * 60000).toISOString(), numeroDocumento: "NF-001023", mensagemOnde: "Erro na validação do CNPJ do fornecedor", status: "Não Encontrado", rpaNome: "Leitura Planilha NFe", valor: 340.50, fornecedor: "Papelaria Express", rpaId: "r1111111-1111-1111-1111-111111111111", clientId: "33333333-3333-3333-3333-333333333333" },
       { dataExecucao: new Date(Date.now() - 30 * 60000).toISOString(), numeroDocumento: "BOL-99052", mensagemOnde: "Baixa concluída no ERP corporativo", status: "Sucesso", rpaNome: "Conciliação Bancária", valor: 4500.00, fornecedor: "Banco Itaú S.A.", rpaId: "r3333333-3333-3333-3333-333333333333", clientId: "44444444-4444-4444-4444-444444444444" },
       { dataExecucao: new Date(Date.now() - 45 * 60000).toISOString(), numeroDocumento: "TRK-77401", mensagemOnde: "Status atualizado: Em trânsito para filial", status: "Sucesso", rpaNome: "Monitoramento de Cargas", valor: 0.00, fornecedor: "Transp. Rápido S.A.", rpaId: "r4444444-4444-4444-4444-444444444444", clientId: "55555555-5555-5555-5555-555555555555" },
       { dataExecucao: new Date(Date.now() - 60 * 60000).toISOString(), numeroDocumento: "NF-001022", mensagemOnde: "Falha de conexão com a API do SEFAZ", status: "Erro", rpaNome: "Leitura Planilha NFe", valor: 7890.90, fornecedor: "Vidros Paraná Ltda", rpaId: "r1111111-1111-1111-1111-111111111111", clientId: "33333333-3333-3333-3333-333333333333" }
@@ -314,7 +314,7 @@ function bootstrapApp() {
 const SCREEN_TITLES = {
   'dash-admin': ['Dashboard','Visão geral consolidada dos clientes'],
   'clientes':   ['Clientes','Empresas cadastradas no ecossistema'],
-  'rpas-admin': ['Catalog RPAs','Parques de robôs cadastrados por cliente'],
+  'rpas-admin': ['Catálogo RPAs','Parques de robôs cadastrados por cliente'],
   'credenciais':['Credenciais','Dados de integração dos robôs'],
   'meus-rpas':  ['Meus RPAs','Desempenho dos robôs ativos'],
   'alertas':    ['Configurar Alertas','Contatos de notificação de erros'],
@@ -408,41 +408,26 @@ function openRpaReport(rpaId) {
   loadExecutions();
 }
 
-function showExecutionDetails(index) {
-  const item = window.currentExecutions[index];
-  if (!item) return;
-
-  const isMock = !item.subtask;
-  const sub = isMock ? item : item.subtask;
-  const task = isMock ? {
-    id: "mock-task-id",
-    nome: "mock_execution_file.json",
-    caminhoJsonDisco: "/data/mock/file.json",
-    timestampInicio: sub.dataExecucao,
-    timestampFim: sub.dataExecucao,
-    status: sub.status === 'Inconsistência' ? 'Erro' : sub.status,
-    msgErro: sub.status === 'Erro' ? sub.mensagemOnde : null,
-    totalLinhas: 1,
-    linhasSucesso: sub.status === 'Sucesso' ? 1 : 0,
-    linhasErro: sub.status !== 'Sucesso' ? 1 : 0,
-    criadoEm: sub.dataExecucao
-  } : sub.task;
+function showSubtaskDetails(taskIndex, subtaskIndex) {
+  const task = window.currentExecutions[taskIndex];
+  if (!task) return;
+  const sub = task.subtasks[subtaskIndex];
+  if (!sub) return;
 
   const modal = document.getElementById('modal-resultado-detalhe');
   if (!modal) return;
   modal.classList.add('open');
 
-  const subStandardKeys = ['id', 'id_task', 'nome', 'status', 'msgErro', 'msgSefaz', 'dataEmissao', 'criadoEm'];
-  const taskStandardKeys = ['id', 'id_cadastro_rpa', 'nome', 'caminhoJsonDisco', 'timestampInicio', 'timestampFim', 'status', 'msgErro', 'totalLinhas', 'linhasSucesso', 'linhasErro', 'criadoEm'];
+  const subStandardKeys = ['id', 'id_task', 'nome', 'status', 'msgErro', 'dataEmissao', 'criadoEm'];
+  const taskStandardKeys = ['id', 'id_cadastro_rpa', 'nome', 'caminhoJsonDisco', 'timestampInicio', 'timestampFim', 'status', 'msgErro', 'totalLinhas', 'linhasSucesso', 'linhasErro', 'linhasNaoEncontrado', 'criadoEm'];
 
   let subHtml = `
     <div class="detail-section-title">Subtask (Item/Linha)</div>
     <div class="detail-grid">
       <div class="detail-item"><span class="detail-lbl">ID Subtask</span><span class="detail-val">${sub.id || '—'}</span></div>
       <div class="detail-item"><span class="detail-lbl">Nome</span><span class="detail-val">${sub.nome || '—'}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Status</span><span class="detail-val"><span class="badge ${sub.status === 'Sucesso' ? 'badge-success' : (sub.status === 'Inconsistência' ? 'badge-danger' : 'badge-warn')}">${sub.status}</span></span></div>
+      <div class="detail-item"><span class="detail-lbl">Status</span><span class="detail-val"><span class="badge ${sub.status === 'Sucesso' ? 'badge-success' : (sub.status === 'Não Encontrado' ? 'badge-warn' : 'badge-danger')}">${sub.status}</span></span></div>
       <div class="detail-item"><span class="detail-lbl">Data Emissão</span><span class="detail-val">${sub.dataEmissao || '—'}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Mensagem SEFAZ</span><span class="detail-val">${sub.msgSefaz || '—'}</span></div>
       <div class="detail-item"><span class="detail-lbl">Data Criação</span><span class="detail-val">${sub.criadoEm ? new Date(sub.criadoEm).toLocaleString('pt-BR') : '—'}</span></div>
     </div>
     <div class="detail-item-full"><span class="detail-lbl">Mensagem Erro (Se houver)</span><div class="detail-val-textarea">${sub.msgErro || '—'}</div></div>
@@ -453,13 +438,14 @@ function showExecutionDetails(index) {
     <div class="detail-grid">
       <div class="detail-item"><span class="detail-lbl">ID Task</span><span class="detail-val">${task.id || '—'}</span></div>
       <div class="detail-item"><span class="detail-lbl">Nome do Arquivo</span><span class="detail-val">${task.nome || '—'}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Status Lote</span><span class="detail-val"><span class="badge ${task.status === 'Sucesso' ? 'badge-success' : 'badge-danger'}">${task.status}</span></span></div>
+      <div class="detail-item"><span class="detail-lbl">Status Lote</span><span class="detail-val"><span class="badge ${task.status === 'Sucesso' ? 'badge-success' : (task.status === 'Não Encontrado' ? 'badge-warn' : 'badge-danger')}">${task.status}</span></span></div>
       <div class="detail-item"><span class="detail-lbl">Caminho Disco</span><span class="detail-val"><code>${task.caminhoJsonDisco || '—'}</code></span></div>
       <div class="detail-item"><span class="detail-lbl">Início</span><span class="detail-val">${task.timestampInicio ? new Date(task.timestampInicio).toLocaleString('pt-BR') : '—'}</span></div>
       <div class="detail-item"><span class="detail-lbl">Fim</span><span class="detail-val">${task.timestampFim ? new Date(task.timestampFim).toLocaleString('pt-BR') : '—'}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Total Linhas</span><span class="detail-val">${task.totalLinhas}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Sucessos</span><span class="detail-val">${task.linhasSucesso}</span></div>
-      <div class="detail-item"><span class="detail-lbl">Erros</span><span class="detail-val">${task.linhasErro}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Total Linhas</span><span class="detail-val">${task.totalLinhas || 0}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Sucessos</span><span class="detail-val">${task.linhasSucesso || 0}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Não Encontrados</span><span class="detail-val">${task.linhasNaoEncontrado || 0}</span></div>
+      <div class="detail-item"><span class="detail-lbl">Erros</span><span class="detail-val">${task.linhasErro || 0}</span></div>
       <div class="detail-item"><span class="detail-lbl">Data de Criação</span><span class="detail-val">${task.criadoEm ? new Date(task.criadoEm).toLocaleString('pt-BR') : '—'}</span></div>
     </div>
     <div class="detail-item-full"><span class="detail-lbl">Mensagem de Erro Geral</span><div class="detail-val-textarea">${task.msgErro || '—'}</div></div>
@@ -476,7 +462,7 @@ function showExecutionDetails(index) {
   });
 
   Object.keys(task).forEach(key => {
-    if (!taskStandardKeys.includes(key) && key !== 'cadastroRpa') {
+    if (!taskStandardKeys.includes(key) && key !== 'cadastroRpa' && key !== 'subtasks') {
       const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) + ' (Task)';
       customItems.push({ label, val: task[key] });
     }
@@ -1254,40 +1240,151 @@ function renderExecutionsData(data) {
   const tbody = document.querySelector('#tbl-resultados tbody');
   tbody.innerHTML = '';
 
-  let total = data.length;
-  let sucesso = data.filter(s => s.status === 'Sucesso').length;
-  let erro = total - sucesso;
-  let taxa = total > 0 ? Math.round((sucesso / total) * 100) : 100;
+  let totalTasks = data.length;
+  let totalSubtasks = 0;
+  let totalSucesso = 0;
+  let totalErro = 0;
+  let totalNaoEncontrado = 0;
 
-  document.getElementById('res-m-total').textContent = total;
-  document.getElementById('res-m-sucesso').textContent = sucesso;
-  document.getElementById('res-m-erro').textContent = erro;
+  data.forEach(t => {
+    totalSubtasks += t.totalLinhas || 0;
+    totalSucesso += t.linhasSucesso || 0;
+    totalErro += t.linhasErro || 0;
+    totalNaoEncontrado += t.linhasNaoEncontrado || 0;
+  });
+
+  let totalFalhas = totalErro + totalNaoEncontrado;
+  let taxa = totalSubtasks > 0 ? Math.round((totalSucesso / totalSubtasks) * 100) : 100;
+
+  document.getElementById('res-m-total').textContent = totalSubtasks;
+  document.getElementById('res-m-sucesso').textContent = totalSucesso;
+  document.getElementById('res-m-erro').textContent = totalFalhas;
   document.getElementById('res-m-taxa').textContent = taxa + '%';
 
   if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);">Nenhuma execução registrada para os filtros selecionados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted); padding:16px;">Nenhuma execução registrada para os filtros selecionados.</td></tr>`;
     return;
   }
 
-  data.forEach((s, index) => {
+  data.forEach((t, tIndex) => {
+    // 1. Task Row
     const tr = document.createElement('tr');
+    tr.className = 'task-row';
     tr.style.cursor = 'pointer';
-    tr.onclick = () => showExecutionDetails(index);
-    const dtStr = new Date(s.dataExecucao).toLocaleString('pt-BR');
+    
+    const dtStr = t.timestampInicio ? new Date(t.timestampInicio).toLocaleString('pt-BR') : '—';
     
     let badge = 'badge-success';
     let icon = 'ti-check';
-    if (s.status === 'Erro') { badge = 'badge-warn'; icon = 'ti-clock'; }
-    else if (s.status === 'Inconsistência') { badge = 'badge-danger'; icon = 'ti-x'; }
+    if (t.status === 'Erro') { badge = 'badge-danger'; icon = 'ti-x'; }
+    else if (t.status === 'Não Encontrado') { badge = 'badge-warn'; icon = 'ti-alert-circle'; }
+    else if (t.status === 'Processando') { badge = 'badge-info'; icon = 'ti-loader'; }
+
+    // Summary description of subtasks
+    let summaryHtml = `
+      <span style="color:var(--color-success); font-weight:600; margin-right:12px;">
+        <i class="ti ti-circle-check"></i> ${t.linhasSucesso || 0}
+      </span>
+      <span style="color:var(--color-danger); font-weight:600; margin-right:12px;">
+        <i class="ti ti-alert-triangle"></i> ${t.linhasErro || 0}
+      </span>
+      <span style="color:var(--color-warn); font-weight:600;">
+        <i class="ti ti-help-circle"></i> ${t.linhasNaoEncontrado || 0}
+      </span>
+    `;
 
     tr.innerHTML = `
-      <td style="color:var(--color-text-muted);">${dtStr}</td>
-      <td><span class="badge badge-info">${s.rpaNome}</span></td>
-      <td><strong>${s.numeroDocumento}</strong></td>
-      <td>${s.mensagemOnde} (Valor: R$ ${s.valor.toFixed(2)} / Forn: ${s.fornecedor})</td>
-      <td><span class="badge ${badge}"><i class="ti ${icon}"></i>${s.status}</span></td>
+      <td><i class="ti ti-chevron-right toggle-caret" style="margin-right:8px; display:inline-block; transition: transform 0.2s;"></i>${dtStr}</td>
+      <td><span class="badge badge-info">${t.rpaNome}</span></td>
+      <td><strong>${t.nome}</strong></td>
+      <td>${summaryHtml}</td>
+      <td><span class="badge ${badge}"><i class="ti ${icon}"></i>${t.status}</span></td>
     `;
+    
+    // 2. Nested Subtasks Row
+    const subtr = document.createElement('tr');
+    subtr.className = 'subtasks-nested-row';
+    subtr.style.display = 'none';
+    
+    let subtasksTableRowsHtml = '';
+    if (t.subtasks && t.subtasks.length > 0) {
+      t.subtasks.forEach((sub, sIndex) => {
+        let subBadge = 'badge-success';
+        let subIcon = 'ti-check';
+        if (sub.status === 'Erro') { subBadge = 'badge-danger'; subIcon = 'ti-x'; }
+        else if (sub.status === 'Não Encontrado') { subBadge = 'badge-warn'; subIcon = 'ti-alert-circle'; }
+
+        const subVal = sub.valorTotalDocumento != null ? 'R$ ' + sub.valorTotalDocumento.toFixed(2) : 'R$ 0,00';
+        const subForn = sub.nomeFornecedor || 'N/A';
+        const subDoc = sub.numeroDocumento || 'N/A';
+        
+        subtasksTableRowsHtml += `
+          <tr style="border-bottom:1px solid rgba(0,0,0,0.05); background: transparent;">
+            <td style="padding:8px;">${sub.nome || '—'}</td>
+            <td style="padding:8px;"><strong>${subDoc}</strong></td>
+            <td style="padding:8px;">${sub.dataEmissao || '—'}</td>
+            <td style="padding:8px;">${subVal}</td>
+            <td style="padding:8px;">${subForn}</td>
+            <td style="padding:8px;"><span class="badge ${subBadge}"><i class="ti ${subIcon}"></i>${sub.status}</span></td>
+            <td style="padding:8px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${sub.msgErro || ''}">
+              ${sub.msgErro || 'Processamento concluído'}
+            </td>
+            <td style="padding:8px; text-align:center;">
+              <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); showSubtaskDetails(${tIndex}, ${sIndex});" style="padding: 2px 6px; font-size: 11px;">
+                <i class="ti ti-eye"></i> Detalhes
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    } else {
+      subtasksTableRowsHtml = `
+        <tr>
+          <td colspan="8" style="text-align:center; color:var(--color-text-muted); padding:12px;">
+            Nenhuma subtask registrada para esta execução.
+          </td>
+        </tr>
+      `;
+    }
+
+    subtr.innerHTML = `
+      <td colspan="5" style="padding:16px 24px; background: var(--color-bg-surface-light); border-top: 1px inset var(--color-border); border-bottom: 1px inset var(--color-border);">
+        <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+          Itens Processados (Subtasks)
+        </div>
+        <div class="table-wrap" style="box-shadow: none; border: 1px solid var(--color-border); margin: 0; background: var(--color-card);">
+          <table style="width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: var(--color-bg-surface); border-bottom: 2px solid var(--color-border);">
+                <th style="padding:8px; font-size:12px; text-align:left;">Item</th>
+                <th style="padding:8px; font-size:12px; text-align:left;">Documento</th>
+                <th style="padding:8px; font-size:12px; text-align:left;">Emissão</th>
+                <th style="padding:8px; font-size:12px; text-align:left;">Valor</th>
+                <th style="padding:8px; font-size:12px; text-align:left;">Fornecedor</th>
+                <th style="padding:8px; font-size:12px; text-align:left;">Status</th>
+                <th style="padding:8px; font-size:12px; text-align:left;">Resultado / Log</th>
+                <th style="padding:8px; font-size:12px; text-align:center; width: 90px;">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${subtasksTableRowsHtml}
+            </tbody>
+          </table>
+        </div>
+      </td>
+    `;
+    
+    tr.onclick = () => {
+      const isVisible = subtr.style.display !== 'none';
+      subtr.style.display = isVisible ? 'none' : 'table-row';
+      const caret = tr.querySelector('.toggle-caret');
+      if (caret) {
+        caret.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(90deg)';
+      }
+    };
+
     tbody.appendChild(tr);
+    tbody.appendChild(subtr);
   });
 }
 
@@ -1300,14 +1397,64 @@ function renderMockExecutions(rpaId, status) {
   if (rpaId) {
     subtasks = subtasks.filter(s => s.rpaId === rpaId);
   }
+
+  // Group mock subtasks into mock tasks dynamically
+  const tasksMap = {};
+  
+  subtasks.forEach(s => {
+    const key = s.rpaId;
+    if (!tasksMap[key]) {
+      tasksMap[key] = {
+        id: "mock-task-" + s.rpaId,
+        nome: s.rpaNome === "Leitura Planilha NFe" ? "lote_nfe_entradas.json" : 
+              s.rpaNome === "Conciliação Bancária" ? "conciliacao_extrato.json" : "monitoramento_rotas.json",
+        caminhoJsonDisco: "/data/mock/" + (s.rpaNome === "Leitura Planilha NFe" ? "lote_nfe_entradas.json" : 
+                            s.rpaNome === "Conciliação Bancária" ? "conciliacao_extrato.json" : "monitoramento_rotas.json"),
+        timestampInicio: s.dataExecucao,
+        timestampFim: s.dataExecucao,
+        status: "Sucesso",
+        msgErro: null,
+        totalLinhas: 0,
+        linhasSucesso: 0,
+        linhasErro: 0,
+        linhasNaoEncontrado: 0,
+        rpaNome: s.rpaNome,
+        rpaId: s.rpaId,
+        clientId: s.clientId,
+        subtasks: []
+      };
+    }
+    
+    const task = tasksMap[key];
+    task.totalLinhas++;
+    if (s.status === 'Sucesso') task.linhasSucesso++;
+    else if (s.status === 'Não Encontrado') task.linhasNaoEncontrado++;
+    else if (s.status === 'Erro') task.linhasErro++;
+    
+    task.subtasks.push(s);
+    
+    if (new Date(s.dataExecucao) < new Date(task.timestampInicio)) {
+      task.timestampInicio = s.dataExecucao;
+    }
+    if (new Date(s.dataExecucao) > new Date(task.timestampFim)) {
+      task.timestampFim = s.dataExecucao;
+    }
+  });
+  
+  let tasks = Object.values(tasksMap);
+  tasks.forEach(t => {
+    if (t.linhasErro > 0) t.status = 'Erro';
+    else if (t.linhasNaoEncontrado > 0) t.status = 'Não Encontrado';
+    else t.status = 'Sucesso';
+  });
+
   if (status && status !== 'Todos') {
-    subtasks = subtasks.filter(s => s.status === status);
+    tasks = tasks.filter(t => t.status === status);
   }
 
-  // Sort by execution date descending
-  subtasks.sort((a, b) => new Date(b.dataExecucao) - new Date(a.dataExecucao));
+  tasks.sort((a, b) => new Date(b.timestampInicio) - new Date(a.timestampInicio));
 
-  renderExecutionsData(subtasks);
+  renderExecutionsData(tasks);
 }
 
 /* ═════════════════════════════════════════════════════════════

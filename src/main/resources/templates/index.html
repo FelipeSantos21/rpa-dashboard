@@ -103,7 +103,7 @@
           <i class="ti ti-building"></i> Clientes
         </div>
         <div class="nav-item nav-admin" onclick="go('rpas-admin')">
-          <i class="ti ti-robot"></i> Catalog RPAs
+          <i class="ti ti-robot"></i> Catálogo RPAs
         </div>
         <div class="nav-item nav-admin" onclick="go('credenciais')">
           <i class="ti ti-users"></i> Usuários
@@ -226,7 +226,7 @@
         <div id="screen-rpas-admin" class="screen" th:replace="~{screens/rpas-admin :: screen}">
           <div class="section-header">
             <div>
-              <div class="section-h">Catalog RPAs</div>
+              <div class="section-h">Catálogo RPAs</div>
               <div class="section-sub">Todos os RPAs cadastrados na plataforma</div>
             </div>
             <button class="btn btn-admin" onclick="abrirModalRPA()"><i class="ti ti-plus"></i> Novo RPA</button>
@@ -374,7 +374,7 @@
                 <select id="filter-status">
                   <option value="Todos">Todos</option>
                   <option value="Sucesso">Sucesso</option>
-                  <option value="Inconsistência">Inconsistência</option>
+                  <option value="Não Encontrado">Não Encontrado</option>
                   <option value="Erro">Erro</option>
                 </select>
               </div>
@@ -409,10 +409,10 @@
 
           <div class="table-wrap">
             <div class="table-header">
-              <div class="table-title"><i class="ti ti-table" style="color:var(--color-primary-lilac);"></i>Analítico de Subtasks (Tempo Real)</div>
+              <div class="table-title"><i class="ti ti-table" style="color:var(--color-primary-lilac);"></i>Histórico de Execuções (Tasks e Subtasks)</div>
             </div>
             <table id="tbl-resultados">
-              <thead><tr><th>Data Execução</th><th>RPA</th><th>Documento / ID</th><th>Mensagem de Retorno</th><th>Status</th></tr></thead>
+              <thead><tr><th>Data Execução</th><th>RPA</th><th>Arquivo / Lote</th><th>Resumo Subtasks</th><th>Status</th></tr></thead>
               <tbody>
                 <!-- Populated dynamically -->
               </tbody>

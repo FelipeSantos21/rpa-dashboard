@@ -85,6 +85,7 @@ CREATE TABLE public.rpa_sja_001_task (
     total_linhas INT DEFAULT 0,
     linhas_sucesso INT DEFAULT 0,
     linhas_erro INT DEFAULT 0,
+    linhas_nao_encontrado INT DEFAULT 0,
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -94,7 +95,6 @@ CREATE TABLE public.rpa_sja_001_subtask (
     nome VARCHAR(255),
     status VARCHAR(50) NOT NULL,
     msg_erro TEXT,
-    msg_sefaz VARCHAR(255),
 
     -- Dados de Negocio (ERP)
     numero_documento VARCHAR(50),

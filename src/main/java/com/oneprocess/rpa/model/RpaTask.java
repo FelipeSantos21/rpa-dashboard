@@ -51,6 +51,10 @@ public class RpaTask {
     @Builder.Default
     private Integer linhasErro = 0;
     
+    @Column(name = "linhas_nao_encontrado")
+    @Builder.Default
+    private Integer linhasNaoEncontrado = 0;
+    
     @Column(name = "criado_em")
     @Builder.Default
     private OffsetDateTime criadoEm = OffsetDateTime.now();

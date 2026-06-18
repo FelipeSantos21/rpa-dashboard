@@ -76,7 +76,6 @@ curl -X POST http://localhost:8080/api/resultados/subtask \
     "idTask": "e963b516-1fcd-400a-bf19-33e1d67a14e9",
     "nome": "Linha 1 - Processamento NF-000550",
     "status": "Sucesso",
-    "msgSefaz": "Autorizada pelo portal SEFAZ",
     "numeroDocumento": "NF-000550",
     "serieDocumento": "1",
     "dataEmissao": "2026-06-09",

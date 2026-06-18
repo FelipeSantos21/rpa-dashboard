@@ -539,30 +539,39 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
     public List<?> getResultados(@RequestParam(required = false) UUID clientId,
                                 @RequestParam(required = false) UUID rpaId,
                                 @RequestParam(required = false) String status) {
-        List<RpaSubtask> subtasks;
+        List<RpaTask> tasks;
         if (rpaId != null) {
-            subtasks = rpaSubtaskRepository.findByTaskCadastroRpaId(rpaId);
+            tasks = rpaTaskRepository.findByCadastroRpaId(rpaId);
         } else if (clientId != null) {
-            subtasks = rpaSubtaskRepository.findByTaskCadastroRpaClienteId(clientId);
+            tasks = rpaTaskRepository.findByCadastroRpaClienteId(clientId);
         } else {
-            subtasks = rpaSubtaskRepository.findAll();
+            tasks = rpaTaskRepository.findAll();
         }
 
-        return subtasks.stream()
-            .filter(s -> status == null || "Todos".equalsIgnoreCase(status) || s.getStatus().equalsIgnoreCase(status))
-            .map(s -> {
+        return tasks.stream()
+            .filter(t -> status == null || "Todos".equalsIgnoreCase(status) || t.getStatus().equalsIgnoreCase(status))
+            .map(t -> {
                 Map<String, Object> map = new HashMap<>();
-                map.put("dataExecucao", s.getTask().getTimestampInicio());
-                map.put("numeroDocumento", s.getNumeroDocumento() != null ? s.getNumeroDocumento() : "N/A");
-                map.put("mensagemOnde", s.getMsgSefaz() != null ? s.getMsgSefaz() : (s.getMsgErro() != null ? s.getMsgErro() : "Processamento concluído"));
-                map.put("status", s.getStatus());
-                map.put("rpaNome", s.getTask().getCadastroRpa().getNome());
-                map.put("valor", s.getValorTotalDocumento() != null ? s.getValorTotalDocumento() : BigDecimal.ZERO);
-                map.put("fornecedor", s.getNomeFornecedor() != null ? s.getNomeFornecedor() : "N/A");
-                map.put("subtask", s);
+                map.put("id", t.getId());
+                map.put("nome", t.getNome());
+                map.put("caminhoJsonDisco", t.getCaminhoJsonDisco());
+                map.put("timestampInicio", t.getTimestampInicio());
+                map.put("timestampFim", t.getTimestampFim());
+                map.put("status", t.getStatus());
+                map.put("msgErro", t.getMsgErro());
+                map.put("totalLinhas", t.getTotalLinhas());
+                map.put("linhasSucesso", t.getLinhasSucesso());
+                map.put("linhasErro", t.getLinhasErro());
+                map.put("linhasNaoEncontrado", t.getLinhasNaoEncontrado());
+                map.put("rpaNome", t.getCadastroRpa().getNome());
+                
+                // Fetch subtasks
+                List<RpaSubtask> subtasks = rpaSubtaskRepository.findByTaskId(t.getId());
+                map.put("subtasks", subtasks);
+                
                 return map;
             })
-            .sorted((a, b) -> ((OffsetDateTime) b.get("dataExecucao")).compareTo((OffsetDateTime) a.get("dataExecucao")))
+            .sorted((a, b) -> ((OffsetDateTime) b.get("timestampInicio")).compareTo((OffsetDateTime) a.get("timestampInicio")))
             .collect(Collectors.toList());
     }
 
@@ -628,7 +637,6 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
         subtask.setNome(req.getNome());
         subtask.setStatus(req.getStatus());
         subtask.setMsgErro(req.getMsgErro());
-        subtask.setMsgSefaz(req.getMsgSefaz());
         subtask.setNumeroDocumento(req.getNumeroDocumento());
         subtask.setSerieDocumento(req.getSerieDocumento());
         subtask.setDataEmissao(req.getDataEmissao());
@@ -642,16 +650,28 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
             task.setTotalLinhas(task.getTotalLinhas() + 1);
             if ("Sucesso".equalsIgnoreCase(req.getStatus())) {
                 task.setLinhasSucesso(task.getLinhasSucesso() + 1);
+            } else if ("Não Encontrado".equalsIgnoreCase(req.getStatus())) {
+                task.setLinhasNaoEncontrado(task.getLinhasNaoEncontrado() + 1);
             } else {
                 task.setLinhasErro(task.getLinhasErro() + 1);
             }
         } else {
             if (!req.getStatus().equalsIgnoreCase(oldStatus)) {
+                // Decrement old counter
+                if ("Sucesso".equalsIgnoreCase(oldStatus)) {
+                    task.setLinhasSucesso(Math.max(0, task.getLinhasSucesso() - 1));
+                } else if ("Não Encontrado".equalsIgnoreCase(oldStatus)) {
+                    task.setLinhasNaoEncontrado(Math.max(0, task.getLinhasNaoEncontrado() - 1));
+                } else {
+                    task.setLinhasErro(Math.max(0, task.getLinhasErro() - 1));
+                }
+                
+                // Increment new counter
                 if ("Sucesso".equalsIgnoreCase(req.getStatus())) {
                     task.setLinhasSucesso(task.getLinhasSucesso() + 1);
-                    task.setLinhasErro(Math.max(0, task.getLinhasErro() - 1));
-                } else if ("Sucesso".equalsIgnoreCase(oldStatus)) {
-                    task.setLinhasSucesso(Math.max(0, task.getLinhasSucesso() - 1));
+                } else if ("Não Encontrado".equalsIgnoreCase(req.getStatus())) {
+                    task.setLinhasNaoEncontrado(task.getLinhasNaoEncontrado() + 1);
+                } else {
                     task.setLinhasErro(task.getLinhasErro() + 1);
                 }
             }
@@ -659,6 +679,8 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
         
         if (task.getLinhasErro() > 0) {
             task.setStatus("Erro");
+        } else if (task.getLinhasNaoEncontrado() > 0) {
+            task.setStatus("Não Encontrado");
         } else {
             task.setStatus("Sucesso");
         }
@@ -687,7 +709,6 @@ class CreateSubtaskRequest {
     private String nome;
     private String status;
     private String msgErro;
-    private String msgSefaz;
     private String numeroDocumento;
     private String serieDocumento;
     private LocalDate dataEmissao;
