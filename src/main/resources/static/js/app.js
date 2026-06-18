@@ -519,6 +519,12 @@ function go(id) {
     else { btnNovo.innerHTML = '<i class="ti ti-plus"></i> Novo cliente'; btnNovo.onclick = abrirModalCliente; }
   }
 
+  // Manage real-time polling interval for the Resultados screen
+  if (window.resultadosPollIntervalId) {
+    clearInterval(window.resultadosPollIntervalId);
+    window.resultadosPollIntervalId = null;
+  }
+
   // Data fetching routing
   if (id === 'dash-admin') loadAdminDashboard();
   else if (id === 'clientes') loadClientes();
@@ -526,7 +532,13 @@ function go(id) {
   else if (id === 'credenciais') loadCredenciais();
   else if (id === 'meus-rpas') loadClientDashboard();
   else if (id === 'alertas') loadAlertasView();
-  else if (id === 'resultados') loadResultadosView();
+  else if (id === 'resultados') {
+    loadResultadosView();
+    // Poll for updates every 3 seconds while on the Resultados screen
+    window.resultadosPollIntervalId = setInterval(() => {
+      loadExecutions();
+    }, 3000);
+  }
 }
 
 /* ═════════════════════════════════════════════════════════════

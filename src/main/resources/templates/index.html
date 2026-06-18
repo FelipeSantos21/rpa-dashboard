@@ -355,7 +355,13 @@
         <div id="screen-resultados" class="screen" th:replace="~{screens/resultados :: screen}">
           <div class="section-header">
             <div>
-              <div class="section-h">Resultados</div>
+              <div class="section-h" style="display: flex; align-items: center; gap: 12px;">
+                Resultados
+                <span class="badge badge-success" style="font-size: var(--fs-xs); display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-weight: 600; border-radius: 12px; vertical-align: middle;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: var(--color-success); animation: pulse 1.8s infinite ease-in-out;"></span>
+                  Tempo Real
+                </span>
+              </div>
               <div class="section-sub">Execuções e desempenho analítico dos seus RPAs</div>
             </div>
           </div>
