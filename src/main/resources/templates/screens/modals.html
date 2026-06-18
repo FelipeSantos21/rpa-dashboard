@@ -12,24 +12,68 @@
   <div class="modal-overlay" id="modal-cliente">
     <div class="modal">
       <div class="modal-title"><i class="ti ti-building" style="color:var(--color-admin);"></i>Cadastrar novo cliente</div>
-      <div class="modal-sub">Crie a empresa cliente e defina suas credenciais administrativas</div>
+      <div class="modal-sub">Crie a empresa cliente no ecossistema RPA</div>
       <div class="grid2">
         <div class="field"><div class="field-label">Nome da empresa *</div><input type="text" id="m-cli-nome" placeholder="Ex: ABC Indústria Ltda"></div>
-        <div class="field"><div class="field-label">Responsável *</div><input type="text" id="m-cli-resp" placeholder="Nome do contato"></div>
+        <div class="field"><div class="field-label">Responsável</div><input type="text" id="m-cli-resp" placeholder="Nome do contato principal"></div>
       </div>
       <div class="grid2">
         <div class="field"><div class="field-label">Razão Social</div><input type="text" id="m-cli-razao" placeholder="Razão Social completa"></div>
         <div class="field"><div class="field-label">CNPJ</div><input type="text" id="m-cli-cnpj" placeholder="12.345.678/0001-00"></div>
       </div>
-      <hr>
-      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--color-admin);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;"><i class="ti ti-key" style="vertical-align:-2px;margin-right:5px;"></i>Credenciais de acesso</div>
-      <div class="grid2">
-        <div class="field"><div class="field-label">Login (Username) *</div><input type="text" id="m-cli-username" placeholder="Ex: cliente_nomeempresa"></div>
-        <div class="field"><div class="field-label">Senha *</div><input type="password" id="m-cli-password" placeholder="Defina uma senha"></div>
-      </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="fecharModal('modal-cliente')">Cancelar</button>
         <button class="btn btn-admin" onclick="submitClient()"><i class="ti ti-device-floppy"></i> Salvar cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO USUARIO -->
+  <div class="modal-overlay" id="modal-usuario">
+    <div class="modal">
+      <div class="modal-title"><i class="ti ti-user-plus" style="color:var(--color-admin);"></i>Cadastrar novo usuário</div>
+      <div class="modal-sub">Crie um usuário para acessar o dashboard</div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Nome *</div><input type="text" id="m-user-nome" placeholder="Nome"></div>
+        <div class="field"><div class="field-label">Sobrenome</div><input type="text" id="m-user-sobrenome" placeholder="Sobrenome"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Departamento</div><input type="text" id="m-user-dep" placeholder="Ex: Financeiro"></div>
+        <div class="field">
+          <div class="field-label">Perfil de Acesso *</div>
+          <select id="m-user-role" style="height:38px;">
+            <option value="client">Cliente (Tenant)</option>
+            <option value="admin">Administrador (Total)</option>
+          </select>
+        </div>
+      </div>
+      <hr>
+      <div style="font-size:var(--fs-sm);font-weight:600;color:var(--color-admin);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;"><i class="ti ti-key" style="vertical-align:-2px;margin-right:5px;"></i>Credenciais de acesso</div>
+      <div class="grid2">
+        <div class="field"><div class="field-label">Login (Username) *</div><input type="text" id="m-user-username" placeholder="Ex: joao.silva"></div>
+        <div class="field"><div class="field-label">Senha *</div><input type="password" id="m-user-password" placeholder="Defina uma senha"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-usuario')">Cancelar</button>
+        <button class="btn btn-admin" onclick="submitUser()"><i class="ti ti-device-floppy"></i> Salvar usuário</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VINCULAR CLIENTES -->
+  <div class="modal-overlay" id="modal-vinculos">
+    <div class="modal" style="width: 500px;">
+      <div class="modal-title"><i class="ti ti-building" style="color:var(--color-primary-lilac);"></i>Vincular empresas ao usuário</div>
+      <div class="modal-sub" id="vinculos-modal-sub">Selecione as empresas que este usuário poderá visualizar</div>
+      <input type="hidden" id="m-vinculo-userid">
+      
+      <div style="max-height: 250px; overflow-y: auto; margin: 15px 0; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-base); background: var(--color-bg-surface-light);" id="vinculos-checkbox-list">
+        <!-- Checklist populated dynamically -->
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-vinculos')">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitVinculos()"><i class="ti ti-device-floppy"></i> Salvar vínculos</button>
       </div>
     </div>
   </div>

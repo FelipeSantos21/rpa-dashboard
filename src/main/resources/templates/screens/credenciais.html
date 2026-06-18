@@ -10,18 +10,29 @@
 <div th:fragment="screen" id="screen-credenciais" class="screen">
   <div class="section-header">
     <div>
-      <div class="section-h">Credenciais de acesso</div>
-      <div class="section-sub">Acessos dos robôs e usuários clientes</div>
+      <div class="section-h">Usuários e Acessos</div>
+      <div class="section-sub">Gerencie os usuários do sistema, perfis e seus vínculos com as empresas clientes</div>
     </div>
+    <button class="btn btn-admin" onclick="abrirModalUsuario()">
+      <i class="ti ti-user-plus"></i> Novo Usuário
+    </button>
   </div>
   <div class="table-wrap">
     <div class="table-header">
-      <div class="table-title"><i class="ti ti-key" style="color:var(--color-admin);"></i> Logins dos clientes</div>
+      <div class="table-title"><i class="ti ti-users" style="color:var(--color-admin);"></i> Lista de Usuários</div>
     </div>
-    <table id="tbl-credenciais">
-      <thead><tr><th>Cliente</th><th>Username (Robot Client-ID)</th><th>Senha (JWT Secret Key)</th><th>Ações</th></tr></thead>
+    <table id="tbl-usuarios">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Username</th>
+          <th>Perfil (Role)</th>
+          <th>Empresas Vinculadas</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
       <tbody>
-        <!-- Dynamically populated -->
+        <!-- Populated dynamically -->
       </tbody>
     </table>
   </div>

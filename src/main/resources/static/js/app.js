@@ -50,6 +50,7 @@ function isMockMode() {
 const MOCK_CLIENTS_KEY = "op_mock_clients";
 const MOCK_RPAS_KEY = "op_mock_rpas";
 const MOCK_SUBTASKS_KEY = "op_mock_subtasks";
+const MOCK_USERS_KEY = "op_mock_users";
 
 function getMockClients() {
   return JSON.parse(localStorage.getItem(MOCK_CLIENTS_KEY)) || [];
@@ -68,6 +69,12 @@ function getMockSubtasks() {
 }
 function saveMockSubtasks(subtasks) {
   localStorage.setItem(MOCK_SUBTASKS_KEY, JSON.stringify(subtasks));
+}
+function getMockUsers() {
+  return JSON.parse(localStorage.getItem(MOCK_USERS_KEY)) || [];
+}
+function saveMockUsers(users) {
+  localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(users));
 }
 
 // ── INITIALIZE MOCK DATA FOR OFFLINE PREVIEW ──
@@ -101,6 +108,15 @@ function initMockData() {
       { dataExecucao: new Date(Date.now() - 60 * 60000).toISOString(), numeroDocumento: "NF-001022", mensagemOnde: "Falha de conexão com a API do SEFAZ", status: "Erro", rpaNome: "Leitura Planilha NFe", valor: 7890.90, fornecedor: "Vidros Paraná Ltda", rpaId: "r1111111-1111-1111-1111-111111111111", clientId: "33333333-3333-3333-3333-333333333333" }
     ];
     saveMockSubtasks(subtasks);
+  }
+
+  if (!localStorage.getItem(MOCK_USERS_KEY)) {
+    const users = [
+      { id: "71872f92-bf1c-4e31-9716-e58a3426dc7c", nome: "OneProcess", sobrenome: "Admin", departamento: "TI", username: "oneprocess", role: "admin", clientes: [] },
+      { id: "user-abc-id", nome: "João", sobrenome: "Ferreira", departamento: "Financeiro", username: "cliente_abc", role: "client", clientes: [{ id: "33333333-3333-3333-3333-333333333333", nome: "ABC Indústria Ltda" }] },
+      { id: "user-xyz-id", nome: "Maria", sobrenome: "Fernanda", departamento: "Fiscal", username: "cliente_xyz", role: "client", clientes: [{ id: "44444444-4444-4444-4444-444444444444", nome: "TechSolutions S.A." }] }
+    ];
+    saveMockUsers(users);
   }
 }
 
@@ -733,39 +749,251 @@ function renderRpasAdminData(data) {
   });
 }
 
-// ── CREDENTIALS VIEW ──
+// ── CREDENTIALS/USERS VIEW ──
 function loadCredenciais() {
   if (isMockMode()) {
-    renderCredenciaisData(getMockClients());
+    renderUsuariosData(getMockUsers());
     return;
   }
-  fetch('/api/clientes')
+  fetch('/api/usuarios')
     .antigravityJson()
     .then(data => {
-      renderCredenciaisData(data);
+      renderUsuariosData(data);
     })
     .catch(err => {
-      console.warn("Failed to fetch credentials. Retrying in mock mode...", err);
+      console.warn("Failed to fetch users. Retrying in mock mode...", err);
       window.useMockMode = true;
       loadCredenciais();
     });
 }
 
-function renderCredenciaisData(data) {
-  const tbody = document.querySelector('#tbl-credenciais tbody');
+function renderUsuariosData(users) {
+  const tbody = document.querySelector('#tbl-usuarios tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  data.forEach(c => {
-    const user = 'cliente_' + c.nome.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+  
+  users.forEach(u => {
     const tr = document.createElement('tr');
+    
+    // Format linked clients as badges
+    let clientesBadges = '';
+    if (u.clientes && u.clientes.length > 0) {
+      clientesBadges = u.clientes.map(c => 
+        `<span style="display:inline-block; background:var(--color-bg-surface-light); color:var(--color-text); padding:3px 8px; border-radius:var(--radius-xs); font-size:11px; font-weight:500; border:1px solid var(--color-border); margin:2px;">${c.nome}</span>`
+      ).join('');
+    } else {
+      clientesBadges = `<span style="font-size:11.5px; color:var(--color-text-muted); font-style:italic;">Nenhuma empresa vinculada</span>`;
+    }
+    
+    // Perfil Badge
+    const roleBadge = u.role === 'admin' 
+      ? `<span class="topbar-badge" style="margin:0;"><i class="ti ti-shield-check"></i> Admin</span>`
+      : `<span class="topbar-badge" style="margin:0; background:#e8f4fd; color:#0b66c2; border-color:#0b66c2;"><i class="ti ti-user"></i> Cliente</span>`;
+
     tr.innerHTML = `
-      <td><strong>${c.nome}</strong></td>
-      <td><code style="background:var(--color-bg-surface-light);padding:2px 8px;border-radius:var(--radius-xs);font-size:var(--fs-sm);">${user}</code></td>
-      <td><code style="background:var(--color-bg-surface-light);padding:2px 8px;border-radius:var(--radius-xs);font-size:var(--fs-sm);">abc123</code></td>
+      <td><strong>${u.nome} ${u.sobrenome || ''}</strong></td>
+      <td><code>${u.username}</code></td>
+      <td>${roleBadge}</td>
+      <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${clientesBadges}</div></td>
       <td>
-        <button class="btn btn-ghost btn-xs" onclick="abrirModalCred('${c.nome.replaceAll("'", "\\'")}', '${user}', 'abc123')"><i class="ti ti-send"></i> Mostrar dados de conexão</button>
+        <button class="btn btn-ghost btn-xs" style="color:var(--color-primary-lilac); border-color:var(--color-border);" onclick="abrirModalVinculos('${u.id}', '${u.nome.replaceAll("'", "\\'")}')"><i class="ti ti-link"></i> Vincular Empresas</button>
+        <button class="btn btn-ghost btn-xs" style="color:var(--color-danger); border-color:var(--color-border);" onclick="deleteUser('${u.id}')"><i class="ti ti-trash"></i> Excluir</button>
       </td>
     `;
     tbody.appendChild(tr);
+  });
+}
+
+function abrirModalUsuario() {
+  document.getElementById('modal-usuario').style.display = 'flex';
+}
+
+function submitUser() {
+  const nome = document.getElementById('m-user-nome').value.trim();
+  const sobrenome = document.getElementById('m-user-sobrenome').value.trim();
+  const dep = document.getElementById('m-user-dep').value.trim();
+  const role = document.getElementById('m-user-role').value;
+  const user = document.getElementById('m-user-username').value.trim();
+  const pass = document.getElementById('m-user-password').value.trim();
+
+  if(!nome || !user || !pass) {
+    alert("Por favor, preencha todos os campos obrigatórios (*).");
+    return;
+  }
+
+  if (isMockMode()) {
+    const users = getMockUsers();
+    const newUser = {
+      id: crypto.randomUUID ? crypto.randomUUID() : "mock-user-" + Date.now(),
+      nome: nome,
+      sobrenome: sobrenome,
+      departamento: dep,
+      role: role,
+      username: user.toLowerCase(),
+      clientes: []
+    };
+    users.push(newUser);
+    saveMockUsers(users);
+
+    fecharModal('modal-usuario');
+    clearUserFormFields();
+    loadCredenciais();
+    return;
+  }
+
+  fetch('/api/usuarios', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nome: nome,
+      sobrenome: sobrenome,
+      departamento: dep,
+      role: role,
+      username: user,
+      password: pass
+    })
+  })
+  .then(res => {
+    if(res.ok) {
+      fecharModal('modal-usuario');
+      clearUserFormFields();
+      loadCredenciais();
+    } else {
+      res.json().then(data => {
+        alert(data.message || "Erro ao criar usuário.");
+      }).catch(() => {
+        alert("Erro ao criar usuário.");
+      });
+    }
+  })
+  .catch(err => {
+    console.warn("Failed to create user. Retrying in mock mode...", err);
+    window.useMockMode = true;
+    submitUser();
+  });
+}
+
+function clearUserFormFields() {
+  document.getElementById('m-user-nome').value = '';
+  document.getElementById('m-user-sobrenome').value = '';
+  document.getElementById('m-user-dep').value = '';
+  document.getElementById('m-user-role').value = 'client';
+  document.getElementById('m-user-username').value = '';
+  document.getElementById('m-user-password').value = '';
+}
+
+function deleteUser(userId) {
+  if (!confirm("Tem certeza que deseja remover este usuário?")) return;
+
+  if (isMockMode()) {
+    const users = getMockUsers().filter(u => u.id !== userId);
+    saveMockUsers(users);
+    loadCredenciais();
+    return;
+  }
+
+  fetch(`/api/usuarios/${userId}`, {
+    method: 'DELETE'
+  })
+  .then(res => {
+    if(res.ok) {
+      loadCredenciais();
+    } else {
+      alert("Erro ao remover usuário.");
+    }
+  })
+  .catch(err => {
+    console.warn("Failed to remove user. Retrying in mock mode...", err);
+    window.useMockMode = true;
+    deleteUser(userId);
+  });
+}
+
+function abrirModalVinculos(userId, userNome) {
+  document.getElementById('m-vinculo-userid').value = userId;
+  document.getElementById('vinculos-modal-sub').textContent = `Selecione as empresas que o usuário "${userNome}" poderá visualizar`;
+
+  const checkboxList = document.getElementById('vinculos-checkbox-list');
+  checkboxList.innerHTML = `<div style="text-align:center; padding:15px; color:var(--color-text-muted);">Carregando empresas...</div>`;
+
+  document.getElementById('modal-vinculos').style.display = 'flex';
+
+  // 1. Get all clients
+  let clientsPromise = isMockMode() 
+    ? Promise.resolve(getMockClients())
+    : fetch('/api/clientes').then(res => res.json());
+
+  // 2. Get user current links
+  let userPromise = isMockMode()
+    ? Promise.resolve(getMockUsers().find(u => u.id === userId))
+    : fetch('/api/usuarios').then(res => res.json()).then(users => users.find(u => u.id === userId));
+
+  Promise.all([clientsPromise, userPromise])
+    .then(([clients, user]) => {
+      checkboxList.innerHTML = '';
+      if (!clients || clients.length === 0) {
+        checkboxList.innerHTML = `<div style="text-align:center; padding:15px; color:var(--color-text-muted);">Nenhum cliente cadastrado.</div>`;
+        return;
+      }
+
+      const linkedIds = (user && user.clientes) ? user.clientes.map(c => c.id) : [];
+
+      clients.forEach(c => {
+        const isChecked = linkedIds.includes(c.id) ? 'checked' : '';
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '10px';
+        item.style.padding = '8px 6px';
+        item.style.borderBottom = '1px solid var(--color-border)';
+        item.innerHTML = `
+          <input type="checkbox" id="chk-vinculo-${c.id}" value="${c.id}" ${isChecked} style="width:16px; height:16px; cursor:pointer;">
+          <label for="chk-vinculo-${c.id}" style="cursor:pointer; font-weight:500; font-size:var(--fs-sm);">${c.nome}</label>
+        `;
+        checkboxList.appendChild(item);
+      });
+    })
+    .catch(err => {
+      console.error("Error loading links data", err);
+      checkboxList.innerHTML = `<div style="color:var(--color-danger); text-align:center; padding:15px;">Erro ao carregar dados de vínculo.</div>`;
+    });
+}
+
+function submitVinculos() {
+  const userId = document.getElementById('m-vinculo-userid').value;
+  const checkboxList = document.getElementById('vinculos-checkbox-list');
+  const checkedBoxes = checkboxList.querySelectorAll('input[type="checkbox"]:checked');
+  const clientIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+  if (isMockMode()) {
+    const users = getMockUsers();
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      const allClients = getMockClients();
+      user.clientes = allClients.filter(c => clientIds.includes(c.id)).map(c => ({ id: c.id, nome: c.nome }));
+      saveMockUsers(users);
+    }
+    fecharModal('modal-vinculos');
+    loadCredenciais();
+    return;
+  }
+
+  fetch(`/api/usuarios/${userId}/vinculos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(clientIds)
+  })
+  .then(res => {
+    if (res.ok) {
+      fecharModal('modal-vinculos');
+      loadCredenciais();
+    } else {
+      alert("Erro ao salvar vínculos.");
+    }
+  })
+  .catch(err => {
+    console.error("Error saving links", err);
+    alert("Erro ao salvar vínculos.");
   });
 }
 
@@ -1091,11 +1319,9 @@ function submitClient() {
   const resp = document.getElementById('m-cli-resp').value.trim();
   const razao = document.getElementById('m-cli-razao').value.trim();
   const cnpj = document.getElementById('m-cli-cnpj').value.trim();
-  const user = document.getElementById('m-cli-username').value.trim();
-  const pass = document.getElementById('m-cli-password').value.trim();
 
-  if(!nome || !resp || !user || !pass) {
-    alert("Por favor, preencha todos os campos obrigatórios (*).");
+  if(!nome) {
+    alert("Por favor, preencha o campo obrigatório Nome da empresa (*).");
     return;
   }
 
@@ -1125,9 +1351,7 @@ function submitClient() {
       nome: nome,
       razaoSocial: razao,
       cnpj: cnpj,
-      responsavel: resp,
-      username: user,
-      password: pass
+      responsavel: resp
     })
   })
   .then(res => {
@@ -1152,8 +1376,6 @@ function clearClientFormFields() {
   document.getElementById('m-cli-resp').value = '';
   document.getElementById('m-cli-razao').value = '';
   document.getElementById('m-cli-cnpj').value = '';
-  document.getElementById('m-cli-username').value = '';
-  document.getElementById('m-cli-password').value = '';
 }
 
 function submitRpa() {

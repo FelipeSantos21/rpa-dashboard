@@ -14,7 +14,6 @@ import java.util.UUID;
 @Builder
 public class UsuarioPerfil {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     
     @Column(nullable = false)
