@@ -519,6 +519,12 @@ function go(id) {
     else { btnNovo.innerHTML = '<i class="ti ti-plus"></i> Novo cliente'; btnNovo.onclick = abrirModalCliente; }
   }
 
+  // Manage real-time polling interval for the Resultados screen
+  if (window.resultadosPollIntervalId) {
+    clearInterval(window.resultadosPollIntervalId);
+    window.resultadosPollIntervalId = null;
+  }
+
   // Data fetching routing
   if (id === 'dash-admin') loadAdminDashboard();
   else if (id === 'clientes') loadClientes();
@@ -526,7 +532,13 @@ function go(id) {
   else if (id === 'credenciais') loadCredenciais();
   else if (id === 'meus-rpas') loadClientDashboard();
   else if (id === 'alertas') loadAlertasView();
-  else if (id === 'resultados') loadResultadosView();
+  else if (id === 'resultados') {
+    loadResultadosView();
+    // Poll for updates every 3 seconds while on the Resultados screen
+    window.resultadosPollIntervalId = setInterval(() => {
+      loadExecutions();
+    }, 3000);
+  }
 }
 
 /* ═════════════════════════════════════════════════════════════
@@ -1240,6 +1252,10 @@ function renderExecutionsData(data) {
   const tbody = document.querySelector('#tbl-resultados tbody');
   tbody.innerHTML = '';
 
+  if (!window.expandedTaskIds) {
+    window.expandedTaskIds = new Set();
+  }
+
   let totalTasks = data.length;
   let totalSubtasks = 0;
   let totalSucesso = 0;
@@ -1293,8 +1309,11 @@ function renderExecutionsData(data) {
       </span>
     `;
 
+    const isExpanded = window.expandedTaskIds.has(t.id);
+    const caretTransform = isExpanded ? 'transform: rotate(90deg);' : '';
+
     tr.innerHTML = `
-      <td><i class="ti ti-chevron-right toggle-caret" style="margin-right:8px; display:inline-block; transition: transform 0.2s;"></i>${dtStr}</td>
+      <td><i class="ti ti-chevron-right toggle-caret" style="margin-right:8px; display:inline-block; transition: transform 0.2s; ${caretTransform}"></i>${dtStr}</td>
       <td><span class="badge badge-info">${t.rpaNome}</span></td>
       <td><strong>${t.nome}</strong></td>
       <td>${summaryHtml}</td>
@@ -1304,7 +1323,7 @@ function renderExecutionsData(data) {
     // 2. Nested Subtasks Row
     const subtr = document.createElement('tr');
     subtr.className = 'subtasks-nested-row';
-    subtr.style.display = 'none';
+    subtr.style.display = isExpanded ? 'table-row' : 'none';
     
     let subtasksTableRowsHtml = '';
     if (t.subtasks && t.subtasks.length > 0) {
@@ -1377,6 +1396,11 @@ function renderExecutionsData(data) {
     tr.onclick = () => {
       const isVisible = subtr.style.display !== 'none';
       subtr.style.display = isVisible ? 'none' : 'table-row';
+      if (isVisible) {
+        window.expandedTaskIds.delete(t.id);
+      } else {
+        window.expandedTaskIds.add(t.id);
+      }
       const caret = tr.querySelector('.toggle-caret');
       if (caret) {
         caret.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(90deg)';
