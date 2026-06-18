@@ -1253,12 +1253,12 @@ function renderExecutionsData(data) {
     totalNaoEncontrado += t.linhasNaoEncontrado || 0;
   });
 
-  let totalFalhas = totalErro + totalNaoEncontrado;
   let taxa = totalSubtasks > 0 ? Math.round((totalSucesso / totalSubtasks) * 100) : 100;
 
   document.getElementById('res-m-total').textContent = totalSubtasks;
   document.getElementById('res-m-sucesso').textContent = totalSucesso;
-  document.getElementById('res-m-erro').textContent = totalFalhas;
+  document.getElementById('res-m-erro').textContent = totalErro;
+  document.getElementById('res-m-nao-encontrado').textContent = totalNaoEncontrado;
   document.getElementById('res-m-taxa').textContent = taxa + '%';
 
   if (data.length === 0) {

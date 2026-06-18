@@ -202,6 +202,12 @@ body {
   gap: var(--space-md);
 }
 
+.grid5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-md);
+}
+
 .app {
   display: none;
   min-height: 100vh;
@@ -798,6 +804,10 @@ body {
   background: var(--gradient-btn-admin);
 }
 
+.metric-info::before {
+  background: linear-gradient(90deg, #3a9ad6, var(--color-info));
+}
+
 .metric-icon {
   width: 38px;
   height: 38px;
@@ -832,6 +842,11 @@ body {
 .metric-admin .metric-icon {
   background: var(--color-admin-bg);
   color: var(--color-admin);
+}
+
+.metric-info .metric-icon {
+  background: var(--color-info-bg);
+  color: var(--color-info);
 }
 
 .metric-num {
@@ -1351,6 +1366,9 @@ hr {
    6. RESPONSIVENESS & MEDIA QUERIES
    ═════════════════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
+  .grid5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
   .grid4 {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1382,7 +1400,7 @@ hr {
   .content {
     padding: var(--space-lg) var(--space-md);
   }
-  .grid4, .grid3, .grid2 {
+  .grid5, .grid4, .grid3, .grid2 {
     grid-template-columns: 1fr;
   }
   .topbar-menu-btn {
