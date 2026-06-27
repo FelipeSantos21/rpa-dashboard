@@ -26,6 +26,9 @@ public class RpaTask {
     @Column(name = "caminho_json_disco")
     private String caminhoJsonDisco;
     
+    @Column(name = "caminho_planilha")
+    private String caminhoPlanilha;
+    
     @Column(name = "timestamp_inicio")
     @Builder.Default
     private OffsetDateTime timestampInicio = OffsetDateTime.now();

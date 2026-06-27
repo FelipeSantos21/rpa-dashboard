@@ -99,7 +99,7 @@ class LoginResponse {
 class DashboardController {
     private final ClienteRepository clienteRepository;
     private final CadastroRpaRepository cadastroRpaRepository;
-    private final RpaTaskRepository rpaTaskRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @GetMapping("/admin")
     public ResponseEntity<?> getAdminDashboard() {
@@ -117,10 +117,27 @@ class DashboardController {
                     .collect(Collectors.toList());
             
             long clientRpaCount = clientRpas.size();
-            long executions = rpaTaskRepository.countByClienteId(c.getId());
-            
-            long totalRows = rpaTaskRepository.sumTotalLinhasByClienteId(c.getId());
-            long successRows = rpaTaskRepository.sumLinhasSucessoByClienteId(c.getId());
+            long executions = 0;
+            long totalRows = 0;
+            long successRows = 0;
+
+            for (CadastroRpa r : clientRpas) {
+                String ident = r.getIdentificadorRpa();
+                if (ident == null || ident.trim().isEmpty()) continue;
+                String taskTable = ident + "_task";
+                try {
+                    Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + taskTable, Integer.class);
+                    if (count != null) executions += count;
+                    
+                    Integer sumTotal = jdbcTemplate.queryForObject("SELECT COALESCE(SUM(total_linhas), 0) FROM " + taskTable, Integer.class);
+                    if (sumTotal != null) totalRows += sumTotal;
+                    
+                    Integer sumSuccess = jdbcTemplate.queryForObject("SELECT COALESCE(SUM(linhas_sucesso), 0) FROM " + taskTable, Integer.class);
+                    if (sumSuccess != null) successRows += sumSuccess;
+                } catch (Exception e) {
+                    // Ignore missing tables
+                }
+            }
             
             int successRate = 100;
             if (totalRows > 0) {
@@ -534,44 +551,170 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
     private final RpaTaskRepository rpaTaskRepository;
     private final RpaSubtaskRepository rpaSubtaskRepository;
     private final CadastroRpaRepository cadastroRpaRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    private void checkAndCreateTables(String ident) {
+        String taskTable = ident + "_task";
+        String subtaskTable = ident + "_subtask";
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + taskTable + " (" +
+                "id UUID PRIMARY KEY, " +
+                "id_cadastro_rpa UUID, " +
+                "nome VARCHAR(255) NOT NULL, " +
+                "caminho_json_disco VARCHAR(512), " +
+                "timestamp_inicio TIMESTAMP WITH TIME ZONE DEFAULT NOW(), " +
+                "timestamp_fim TIMESTAMP WITH TIME ZONE, " +
+                "status VARCHAR(50) DEFAULT 'Processando', " +
+                "msg_erro TEXT, " +
+                "total_linhas INT DEFAULT 0, " +
+                "linhas_sucesso INT DEFAULT 0, " +
+                "linhas_erro INT DEFAULT 0, " +
+                "linhas_nao_encontrado INT DEFAULT 0, " +
+                "criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()" +
+                ")");
+                
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + subtaskTable + " (" +
+                "id UUID PRIMARY KEY, " +
+                "id_task UUID REFERENCES " + taskTable + "(id) ON DELETE CASCADE, " +
+                "nome VARCHAR(255), " +
+                "status VARCHAR(50) NOT NULL, " +
+                "msg_erro TEXT, " +
+                "numero_documento VARCHAR(50), " +
+                "serie_documento VARCHAR(20), " +
+                "data_emissao DATE, " +
+                "valor_total_documento NUMERIC(15, 2), " +
+                "codigo_fornecedor VARCHAR(50), " +
+                "nome_fornecedor VARCHAR(255), " +
+                "criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()" +
+                ")");
+        } catch (Exception e) {
+            System.err.println("Error creating dynamic tables: " + e.getMessage());
+        }
+    }
+
+    private Object getValue(Map<String, Object> map, String... keys) {
+        for (String key : keys) {
+            if (map.containsKey(key)) return map.get(key);
+            if (map.containsKey(key.toLowerCase())) return map.get(key.toLowerCase());
+            if (map.containsKey(key.toUpperCase())) return map.get(key.toUpperCase());
+        }
+        return null;
+    }
+
+    private UUID toUUID(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof UUID) return (UUID) obj;
+        return UUID.fromString(obj.toString());
+    }
+
+    private OffsetDateTime toOffsetDateTime(Object obj) {
+        if (obj == null) return OffsetDateTime.MIN;
+        if (obj instanceof OffsetDateTime) return (OffsetDateTime) obj;
+        if (obj instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) obj).toInstant().atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime();
+        }
+        if (obj instanceof java.time.LocalDateTime) {
+            return ((java.time.LocalDateTime) obj).atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime();
+        }
+        try {
+            return OffsetDateTime.parse(obj.toString());
+        } catch (Exception e) {
+            return OffsetDateTime.MIN;
+        }
+    }
+
+    private Map<String, Object> getDynamicTaskById(String ident, UUID taskId) {
+        String taskTable = ident + "_task";
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT * FROM " + taskTable + " WHERE id = ?", taskId);
+            if (rows.isEmpty()) return null;
+            Map<String, Object> row = rows.get(0);
+            Map<String, Object> taskMap = new HashMap<>();
+            taskMap.put("id", getValue(row, "id"));
+            taskMap.put("nome", getValue(row, "nome"));
+            taskMap.put("caminhoJsonDisco", getValue(row, "caminho_json_disco", "caminhoJsonDisco"));
+            taskMap.put("timestampInicio", getValue(row, "timestamp_inicio", "timestampInicio"));
+            taskMap.put("timestampFim", getValue(row, "timestamp_fim", "timestampFim"));
+            taskMap.put("status", getValue(row, "status"));
+            taskMap.put("msgErro", getValue(row, "msg_erro", "msgErro"));
+            taskMap.put("totalLinhas", getValue(row, "total_linhas", "totalLinhas"));
+            taskMap.put("linhasSucesso", getValue(row, "linhas_sucesso", "linhasSucesso"));
+            taskMap.put("linhasErro", getValue(row, "linhas_erro", "linhasErro"));
+            taskMap.put("linhasNaoEncontrado", getValue(row, "linhas_nao_encontrado", "linhasNaoEncontrado"));
+            return taskMap;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     @GetMapping
     public List<?> getResultados(@RequestParam(required = false) UUID clientId,
                                 @RequestParam(required = false) UUID rpaId,
                                 @RequestParam(required = false) String status) {
-        List<RpaTask> tasks;
+        List<CadastroRpa> rpas;
         if (rpaId != null) {
-            tasks = rpaTaskRepository.findByCadastroRpaId(rpaId);
+            rpas = cadastroRpaRepository.findById(rpaId).map(List::of).orElse(List.of());
         } else if (clientId != null) {
-            tasks = rpaTaskRepository.findByCadastroRpaClienteId(clientId);
+            rpas = cadastroRpaRepository.findByClienteId(clientId);
         } else {
-            tasks = rpaTaskRepository.findAll();
+            rpas = cadastroRpaRepository.findAll();
         }
 
-        return tasks.stream()
-            .filter(t -> status == null || "Todos".equalsIgnoreCase(status) || t.getStatus().equalsIgnoreCase(status))
-            .map(t -> {
-                Map<String, Object> map = new HashMap<>();
-                map.put("id", t.getId());
-                map.put("nome", t.getNome());
-                map.put("caminhoJsonDisco", t.getCaminhoJsonDisco());
-                map.put("timestampInicio", t.getTimestampInicio());
-                map.put("timestampFim", t.getTimestampFim());
-                map.put("status", t.getStatus());
-                map.put("msgErro", t.getMsgErro());
-                map.put("totalLinhas", t.getTotalLinhas());
-                map.put("linhasSucesso", t.getLinhasSucesso());
-                map.put("linhasErro", t.getLinhasErro());
-                map.put("linhasNaoEncontrado", t.getLinhasNaoEncontrado());
-                map.put("rpaNome", t.getCadastroRpa().getNome());
-                
-                // Fetch subtasks
-                List<RpaSubtask> subtasks = rpaSubtaskRepository.findByTaskId(t.getId());
-                map.put("subtasks", subtasks);
-                
-                return map;
-            })
-            .sorted((a, b) -> ((OffsetDateTime) b.get("timestampInicio")).compareTo((OffsetDateTime) a.get("timestampInicio")))
+        List<Map<String, Object>> allTasks = new ArrayList<>();
+        for (CadastroRpa rpa : rpas) {
+            String ident = rpa.getIdentificadorRpa();
+            if (ident == null || ident.trim().isEmpty()) continue;
+            checkAndCreateTables(ident);
+            
+            String taskTable = ident + "_task";
+            String subtaskTable = ident + "_subtask";
+            try {
+                List<Map<String, Object>> taskRows = jdbcTemplate.queryForList("SELECT * FROM " + taskTable);
+                for (Map<String, Object> row : taskRows) {
+                    Map<String, Object> taskMap = new HashMap<>();
+                    UUID taskId = toUUID(getValue(row, "id"));
+                    taskMap.put("id", taskId);
+                    taskMap.put("nome", getValue(row, "nome"));
+                    taskMap.put("caminhoJsonDisco", getValue(row, "caminho_json_disco", "caminhoJsonDisco"));
+                    taskMap.put("timestampInicio", getValue(row, "timestamp_inicio", "timestampInicio"));
+                    taskMap.put("timestampFim", getValue(row, "timestamp_fim", "timestampFim"));
+                    taskMap.put("status", getValue(row, "status"));
+                    taskMap.put("msgErro", getValue(row, "msg_erro", "msgErro"));
+                    taskMap.put("totalLinhas", getValue(row, "total_linhas", "totalLinhas"));
+                    taskMap.put("linhasSucesso", getValue(row, "linhas_sucesso", "linhasSucesso"));
+                    taskMap.put("linhasErro", getValue(row, "linhas_erro", "linhasErro"));
+                    taskMap.put("linhasNaoEncontrado", getValue(row, "linhas_nao_encontrado", "linhasNaoEncontrado"));
+                    taskMap.put("rpaNome", rpa.getNome());
+                    taskMap.put("cadastroRpaId", rpa.getId());
+                    
+                    // Fetch subtasks
+                    List<Map<String, Object>> subRows = jdbcTemplate.queryForList("SELECT * FROM " + subtaskTable + " WHERE id_task = ?", taskId);
+                    List<Map<String, Object>> subtasksList = new ArrayList<>();
+                    for (Map<String, Object> subRow : subRows) {
+                        Map<String, Object> subMap = new HashMap<>();
+                        subMap.put("id", toUUID(getValue(subRow, "id")));
+                        subMap.put("nome", getValue(subRow, "nome"));
+                        subMap.put("status", getValue(subRow, "status"));
+                        subMap.put("msgErro", getValue(subRow, "msg_erro", "msgErro"));
+                        subMap.put("numeroDocumento", getValue(subRow, "numero_documento", "numeroDocumento"));
+                        subMap.put("serieDocumento", getValue(subRow, "serie_documento", "serieDocumento"));
+                        subMap.put("dataEmissao", getValue(subRow, "data_emissao", "dataEmissao"));
+                        subMap.put("valorTotalDocumento", getValue(subRow, "valor_total_documento", "valorTotalDocumento"));
+                        subMap.put("codigoFornecedor", getValue(subRow, "codigo_fornecedor", "codigoFornecedor"));
+                        subMap.put("nomeFornecedor", getValue(subRow, "nome_fornecedor", "nomeFornecedor"));
+                        subtasksList.add(subMap);
+                    }
+                    taskMap.put("subtasks", subtasksList);
+                    allTasks.add(taskMap);
+                }
+            } catch (Exception e) {
+                System.err.println("Error fetching results for " + ident + ": " + e.getMessage());
+            }
+        }
+
+        return allTasks.stream()
+            .filter(t -> status == null || "Todos".equalsIgnoreCase(status) || status.equalsIgnoreCase((String) t.get("status")))
+            .sorted((a, b) -> toOffsetDateTime(b.get("timestampInicio")).compareTo(toOffsetDateTime(a.get("timestampInicio"))))
             .collect(Collectors.toList());
     }
 
@@ -586,32 +729,28 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
             return ResponseEntity.badRequest().body(Map.of("message", "Cadastro RPA ID incorreto"));
         }
 
-        Optional<RpaTask> taskOpt = rpaTaskRepository.findById(req.getId());
-        RpaTask task;
-        if (taskOpt.isPresent()) {
-            task = taskOpt.get();
-            task.setNome(req.getNome());
-            task.setCaminhoJsonDisco(req.getCaminhoJsonDisco());
-            task.setStatus(req.getStatus() != null ? req.getStatus() : "Processando");
-            if (req.getMsgErro() != null) task.setMsgErro(req.getMsgErro());
-            if (req.getTimestampFim() != null) task.setTimestampFim(req.getTimestampFim());
-        } else {
-            task = RpaTask.builder()
-                    .id(req.getId())
-                    .cadastroRpa(rpaOpt.get())
-                    .nome(req.getNome())
-                    .caminhoJsonDisco(req.getCaminhoJsonDisco())
-                    .status(req.getStatus() != null ? req.getStatus() : "Processando")
-                    .msgErro(req.getMsgErro())
-                    .totalLinhas(0)
-                    .linhasSucesso(0)
-                    .linhasErro(0)
-                    .timestampInicio(OffsetDateTime.now())
-                    .build();
+        CadastroRpa rpa = rpaOpt.get();
+        String ident = rpa.getIdentificadorRpa();
+        if (ident == null || ident.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Identificador RPA não cadastrado"));
         }
 
-        task = rpaTaskRepository.save(task);
-        return ResponseEntity.ok(task);
+        checkAndCreateTables(ident);
+        String taskTable = ident + "_task";
+
+        String countQuery = "SELECT COUNT(*) FROM " + taskTable + " WHERE id = ?";
+        Integer count = jdbcTemplate.queryForObject(countQuery, Integer.class, req.getId());
+
+        if (count != null && count > 0) {
+            String updateQuery = "UPDATE " + taskTable + " SET nome = ?, caminho_json_disco = ?, status = ?, msg_erro = ?, timestamp_fim = ? WHERE id = ?";
+            jdbcTemplate.update(updateQuery, req.getNome(), req.getCaminhoJsonDisco(), req.getStatus() != null ? req.getStatus() : "Processando", req.getMsgErro(), req.getTimestampFim(), req.getId());
+        } else {
+            String insertQuery = "INSERT INTO " + taskTable + " (id, id_cadastro_rpa, nome, caminho_json_disco, status, msg_erro, total_linhas, linhas_sucesso, linhas_erro, linhas_nao_encontrado, timestamp_inicio) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?)";
+            jdbcTemplate.update(insertQuery, req.getId(), req.getCadastroRpaId(), req.getNome(), req.getCaminhoJsonDisco(), req.getStatus() != null ? req.getStatus() : "Processando", req.getMsgErro(), OffsetDateTime.now());
+        }
+
+        Map<String, Object> taskMap = getDynamicTaskById(ident, req.getId());
+        return ResponseEntity.ok(taskMap);
     }
 
     @PostMapping("/subtask")
@@ -620,74 +759,99 @@ public class Controllers { // Outer wrapper named Controllers to match the filen
             return ResponseEntity.badRequest().body(Map.of("message", "UUID 'id' is required for subtask idempotency"));
         }
 
-        Optional<RpaTask> taskOpt = rpaTaskRepository.findById(req.getIdTask());
-        if (taskOpt.isEmpty()) {
+        CadastroRpa matchedRpa = null;
+        List<CadastroRpa> rpas = cadastroRpaRepository.findAll();
+        for (CadastroRpa rpa : rpas) {
+            String ident = rpa.getIdentificadorRpa();
+            if (ident == null || ident.trim().isEmpty()) continue;
+            checkAndCreateTables(ident);
+            String taskTable = ident + "_task";
+            String checkQuery = "SELECT COUNT(*) FROM " + taskTable + " WHERE id = ?";
+            try {
+                Integer count = jdbcTemplate.queryForObject(checkQuery, Integer.class, req.getIdTask());
+                if (count != null && count > 0) {
+                    matchedRpa = rpa;
+                    break;
+                }
+            } catch (Exception e) {
+                // Ignore table errors
+            }
+        }
+
+        if (matchedRpa == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Task ID de referência não encontrado"));
         }
 
-        RpaTask task = taskOpt.get();
+        String ident = matchedRpa.getIdentificadorRpa();
+        String taskTable = ident + "_task";
+        String subtaskTable = ident + "_subtask";
 
-        Optional<RpaSubtask> subtaskOpt = rpaSubtaskRepository.findById(req.getId());
-        boolean isNew = subtaskOpt.isEmpty();
-        String oldStatus = isNew ? null : subtaskOpt.get().getStatus();
-
-        RpaSubtask subtask = subtaskOpt.orElse(new RpaSubtask());
-        subtask.setId(req.getId());
-        subtask.setTask(task);
-        subtask.setNome(req.getNome());
-        subtask.setStatus(req.getStatus());
-        subtask.setMsgErro(req.getMsgErro());
-        subtask.setNumeroDocumento(req.getNumeroDocumento());
-        subtask.setSerieDocumento(req.getSerieDocumento());
-        subtask.setDataEmissao(req.getDataEmissao());
-        subtask.setValorTotalDocumento(req.getValorTotalDocumento());
-        subtask.setCodigoFornecedor(req.getCodigoFornecedor());
-        subtask.setNomeFornecedor(req.getNomeFornecedor());
-
-        subtask = rpaSubtaskRepository.save(subtask);
+        String subCheckQuery = "SELECT status FROM " + subtaskTable + " WHERE id = ?";
+        List<String> statuses = jdbcTemplate.query(subCheckQuery, (rs, rowNum) -> rs.getString(1), req.getId());
+        boolean isNew = statuses.isEmpty();
+        String oldStatus = isNew ? null : statuses.get(0);
 
         if (isNew) {
-            task.setTotalLinhas(task.getTotalLinhas() + 1);
+            String subInsert = "INSERT INTO " + subtaskTable + " (id, id_task, nome, status, msg_erro, numero_documento, serie_documento, data_emissao, valor_total_documento, codigo_fornecedor, nome_fornecedor, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            jdbcTemplate.update(subInsert, req.getId(), req.getIdTask(), req.getNome(), req.getStatus(), req.getMsgErro(), req.getNumeroDocumento(), req.getSerieDocumento(), req.getDataEmissao(), req.getValorTotalDocumento(), req.getCodigoFornecedor(), req.getNomeFornecedor(), OffsetDateTime.now());
+        } else {
+            String subUpdate = "UPDATE " + subtaskTable + " SET nome = ?, status = ?, msg_erro = ?, numero_documento = ?, serie_documento = ?, data_emissao = ?, valor_total_documento = ?, codigo_fornecedor = ?, nome_fornecedor = ? WHERE id = ?";
+            jdbcTemplate.update(subUpdate, req.getNome(), req.getStatus(), req.getMsgErro(), req.getNumeroDocumento(), req.getSerieDocumento(), req.getDataEmissao(), req.getValorTotalDocumento(), req.getCodigoFornecedor(), req.getNomeFornecedor(), req.getId());
+        }
+
+        // Update task counters
+        String countersQuery = "SELECT total_linhas, linhas_sucesso, linhas_erro, linhas_nao_encontrado FROM " + taskTable + " WHERE id = ?";
+        Map<String, Object> countersRow = jdbcTemplate.queryForMap(countersQuery, req.getIdTask());
+        int totalLinhas = ((Number) getValue(countersRow, "total_linhas")).intValue();
+        int linhasSucesso = ((Number) getValue(countersRow, "linhas_sucesso")).intValue();
+        int linhasErro = ((Number) getValue(countersRow, "linhas_erro")).intValue();
+        int linhasNaoEncontrado = ((Number) getValue(countersRow, "linhas_nao_encontrado")).intValue();
+
+        if (isNew) {
+            totalLinhas += 1;
             if ("Sucesso".equalsIgnoreCase(req.getStatus())) {
-                task.setLinhasSucesso(task.getLinhasSucesso() + 1);
+                linhasSucesso += 1;
             } else if ("Não Encontrado".equalsIgnoreCase(req.getStatus())) {
-                task.setLinhasNaoEncontrado(task.getLinhasNaoEncontrado() + 1);
+                linhasNaoEncontrado += 1;
             } else {
-                task.setLinhasErro(task.getLinhasErro() + 1);
+                linhasErro += 1;
             }
         } else {
             if (!req.getStatus().equalsIgnoreCase(oldStatus)) {
                 // Decrement old counter
                 if ("Sucesso".equalsIgnoreCase(oldStatus)) {
-                    task.setLinhasSucesso(Math.max(0, task.getLinhasSucesso() - 1));
+                    linhasSucesso = Math.max(0, linhasSucesso - 1);
                 } else if ("Não Encontrado".equalsIgnoreCase(oldStatus)) {
-                    task.setLinhasNaoEncontrado(Math.max(0, task.getLinhasNaoEncontrado() - 1));
+                    linhasNaoEncontrado = Math.max(0, linhasNaoEncontrado - 1);
                 } else {
-                    task.setLinhasErro(Math.max(0, task.getLinhasErro() - 1));
+                    linhasErro = Math.max(0, linhasErro - 1);
                 }
                 
                 // Increment new counter
                 if ("Sucesso".equalsIgnoreCase(req.getStatus())) {
-                    task.setLinhasSucesso(task.getLinhasSucesso() + 1);
+                    linhasSucesso += 1;
                 } else if ("Não Encontrado".equalsIgnoreCase(req.getStatus())) {
-                    task.setLinhasNaoEncontrado(task.getLinhasNaoEncontrado() + 1);
+                    linhasNaoEncontrado += 1;
                 } else {
-                    task.setLinhasErro(task.getLinhasErro() + 1);
+                    linhasErro += 1;
                 }
             }
         }
-        
-        if (task.getLinhasErro() > 0) {
-            task.setStatus("Erro");
-        } else if (task.getLinhasNaoEncontrado() > 0) {
-            task.setStatus("Não Encontrado");
-        } else {
-            task.setStatus("Sucesso");
-        }
-        task.setTimestampFim(OffsetDateTime.now());
-        rpaTaskRepository.save(task);
 
-        return ResponseEntity.ok(subtask);
+        String parentStatus;
+        if (linhasErro > 0) {
+            parentStatus = "Erro";
+        } else if (linhasNaoEncontrado > 0) {
+            parentStatus = "Não Encontrado";
+        } else {
+            parentStatus = "Sucesso";
+        }
+
+        String parentUpdate = "UPDATE " + taskTable + " SET total_linhas = ?, linhas_sucesso = ?, linhas_erro = ?, linhas_nao_encontrado = ?, status = ?, timestamp_fim = ? WHERE id = ?";
+        jdbcTemplate.update(parentUpdate, totalLinhas, linhasSucesso, linhasErro, linhasNaoEncontrado, parentStatus, OffsetDateTime.now(), req.getIdTask());
+
+        List<Map<String, Object>> subRows = jdbcTemplate.queryForList("SELECT * FROM " + subtaskTable + " WHERE id = ?", req.getId());
+        return ResponseEntity.ok(subRows.isEmpty() ? Map.of() : subRows.get(0));
     }
 }
 
@@ -715,4 +879,142 @@ class CreateSubtaskRequest {
     private BigDecimal valorTotalDocumento;
     private String codigoFornecedor;
     private String nomeFornecedor;
+}
+
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+class RpaSchedulerApiController {
+    private final JobsRpaRepository jobsRpaRepository;
+    private final RpaExecucaoFilaRepository rpaExecucaoFilaRepository;
+    private final ClienteRepository clienteRepository;
+    private final CadastroRpaRepository cadastroRpaRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @GetMapping("/jobs-rpa")
+    public List<JobsRpa> getJobs(@RequestParam(required = false) UUID clientId, @RequestParam(required = false) UUID rpaId) {
+        if (rpaId != null) {
+            return jobsRpaRepository.findByCadastroRpaId(rpaId);
+        }
+        if (clientId != null) {
+            return jobsRpaRepository.findByClienteId(clientId);
+        }
+        return jobsRpaRepository.findAll();
+    }
+
+    @PostMapping("/jobs-rpa")
+    public ResponseEntity<?> saveJob(@RequestBody CreateJobRpaRequest req) {
+        Cliente cliente = clienteRepository.findById(req.getClientId()).orElse(null);
+        CadastroRpa rpa = cadastroRpaRepository.findById(req.getCadastroRpaId()).orElse(null);
+        
+        if (cliente == null || rpa == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Cliente ou RPA inválido"));
+        }
+
+        JobsRpa job;
+        if (req.getId() != null) {
+            job = jobsRpaRepository.findById(req.getId()).orElse(new JobsRpa());
+        } else {
+            job = new JobsRpa();
+        }
+
+        job.setCliente(cliente);
+        job.setCadastroRpa(rpa);
+        job.setCronExpression(req.getCronExpression());
+        job.setStatus(req.getStatus() != null ? req.getStatus() : "ativo");
+        job.setAtualizadoEm(OffsetDateTime.now());
+        
+        if (job.getId() == null) {
+            job.setCriadoEm(OffsetDateTime.now());
+        }
+
+        job = jobsRpaRepository.save(job);
+        return ResponseEntity.ok(job);
+    }
+
+    @DeleteMapping("/jobs-rpa/{id}")
+    public ResponseEntity<?> deleteJob(@PathVariable UUID id) {
+        jobsRpaRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Agendamento removido com sucesso"));
+    }
+
+    @PostMapping("/rpas/{rpaId}/executar")
+    public ResponseEntity<?> executarAgora(@PathVariable UUID rpaId) {
+        CadastroRpa rpa = cadastroRpaRepository.findById(rpaId).orElse(null);
+        if (rpa == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        RpaExecucaoFila fila = RpaExecucaoFila.builder()
+                .cadastroRpa(rpa)
+                .status("pendente")
+                .tipoExecucao("manual")
+                .parametros("{}")
+                .mensagemStatus("Aguardando orquestrador")
+                .criadoEm(OffsetDateTime.now())
+                .atualizadoEm(OffsetDateTime.now())
+                .build();
+
+        fila = rpaExecucaoFilaRepository.save(fila);
+        return ResponseEntity.ok(fila);
+    }
+
+    @PostMapping("/rpas/reprocessar")
+    public ResponseEntity<?> reprocessar(@RequestBody CreateReprocessRequest req) {
+        CadastroRpa rpa = cadastroRpaRepository.findById(req.getCadastroRpaId()).orElse(null);
+        if (rpa == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "RPA inválido"));
+        }
+
+        // Marcar subtasks no banco com reprocessar = true
+        if (req.getSubtaskIds() != null && !req.getSubtaskIds().isEmpty()) {
+            String subtaskTable = rpa.getIdentificadorRpa() + "_subtask";
+            for (UUID subtaskId : req.getSubtaskIds()) {
+                try {
+                    jdbcTemplate.update("UPDATE " + subtaskTable + " SET reprocessar = true WHERE id = ?", subtaskId);
+                } catch (Exception e) {
+                    // Ignore table errors or fallback
+                }
+            }
+        }
+
+        // Criar registro na fila de execuções
+        String docsJoined = req.getDocumentos() == null ? "" : req.getDocumentos().stream().map(d -> "\"" + d + "\"").collect(Collectors.joining(","));
+        String paramsJson = String.format("{\"caminho_planilha\": \"%s\", \"documentos\": [%s], \"task_id\": \"%s\"}",
+                req.getCaminhoPlanilha() != null ? req.getCaminhoPlanilha().replace("\\", "\\\\") : "",
+                docsJoined,
+                req.getTaskId() != null ? req.getTaskId() : "");
+
+        RpaExecucaoFila fila = RpaExecucaoFila.builder()
+                .cadastroRpa(rpa)
+                .status("pendente")
+                .tipoExecucao("reprocessamento")
+                .parametros(paramsJson)
+                .mensagemStatus("Reprocessamento solicitado")
+                .criadoEm(OffsetDateTime.now())
+                .atualizadoEm(OffsetDateTime.now())
+                .build();
+
+        fila = rpaExecucaoFilaRepository.save(fila);
+        return ResponseEntity.ok(fila);
+    }
+}
+
+@Data
+class CreateJobRpaRequest {
+    private UUID id;
+    private UUID clientId;
+    private UUID cadastroRpaId;
+    private String cronExpression;
+    private String status;
+}
+
+@Data
+class CreateReprocessRequest {
+    private UUID cadastroRpaId;
+    private UUID taskId;
+    private String caminhoPlanilha;
+    private List<UUID> subtaskIds;
+    private List<String> documentos;
 }

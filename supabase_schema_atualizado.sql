@@ -4,6 +4,8 @@
 -- =============================================================================
 
 -- Limpeza preventiva para reconstrução do banco (Rebuild)
+DROP TABLE IF EXISTS public.rpa_execucao_fila CASCADE;
+DROP TABLE IF EXISTS public.jobs_rpa CASCADE;
 DROP TABLE IF EXISTS public.rpa_sja_001_subtask CASCADE;
 DROP TABLE IF EXISTS public.rpa_sja_001_task CASCADE;
 DROP TABLE IF EXISTS public.cadastro_rpa_emails_alerta CASCADE;
@@ -78,6 +80,7 @@ CREATE TABLE public.rpa_sja_001_task (
     id_cadastro_rpa UUID REFERENCES public.cadastro_rpa(id) ON DELETE CASCADE,
     nome VARCHAR(255) NOT NULL, -- nome_arquivo
     caminho_json_disco VARCHAR(512),
+    caminho_planilha VARCHAR(512),
     timestamp_inicio TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     timestamp_fim TIMESTAMP WITH TIME ZONE,
     status VARCHAR(50) DEFAULT 'Processando',
@@ -103,14 +106,38 @@ CREATE TABLE public.rpa_sja_001_subtask (
     valor_total_documento NUMERIC(15, 2),
     codigo_fornecedor VARCHAR(50),
     nome_fornecedor VARCHAR(255),
+    reprocessar BOOLEAN DEFAULT FALSE,
 
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE public.jobs_rpa (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id_cliente UUID NOT NULL REFERENCES public.cliente(id) ON DELETE CASCADE,
+    id_cadastro_rpa UUID NOT NULL REFERENCES public.cadastro_rpa(id) ON DELETE CASCADE,
+    cron_expression VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ativo',
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE public.rpa_execucao_fila (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id_cadastro_rpa UUID NOT NULL REFERENCES public.cadastro_rpa(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'pendente',
+    tipo_execucao VARCHAR(20) NOT NULL,
+    parametros JSONB,
+    mensagem_status TEXT,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Indices para otimização de consultas e velocidade dos dashboards
 CREATE INDEX idx_cadastro_rpa_cliente ON public.cadastro_rpa(id_cliente);
 CREATE INDEX idx_task_rpa ON public.rpa_sja_001_task(id_cadastro_rpa);
 CREATE INDEX idx_subtask_task ON public.rpa_sja_001_subtask(id_task);
+CREATE INDEX idx_jobs_rpa_cliente ON public.jobs_rpa(id_cliente);
+CREATE INDEX idx_execucao_fila_status ON public.rpa_execucao_fila(status);
 
 -- -----------------------------------------------------------------------------
 -- 4. SEMEADURA DE DADOS DE ADMINISTRADOR (oneprocess / op2025)

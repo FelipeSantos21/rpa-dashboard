@@ -262,6 +262,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .build();
         cadastroRpaRepository.save(rpaDelta2);
 
+        // Create dynamic tables for all RPAs
+        for (CadastroRpa rpa : cadastroRpaRepository.findAll()) {
+            String ident = rpa.getIdentificadorRpa();
+            if (ident != null && !ident.trim().isEmpty()) {
+                createDynamicTables(ident);
+            }
+        }
+
         // 5. Create execution history (Tasks & Subtasks) for ABC's Conciliação Fiscal NF-e
         RpaTask task1 = RpaTask.builder()
                 .id(UUID.fromString("6d790d98-89c0-4c12-a7ad-35f922756df4"))
@@ -350,41 +358,26 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .build();
         rpaSubtaskRepository.save(s5);
         
-        // Let's add an execution task for XYZ too
-        RpaTask task2 = RpaTask.builder()
-                .id(UUID.fromString("8c14f09d-cb25-451e-b83c-1df52345e672"))
-                .cadastroRpa(rpaXyz1)
-                .nome("Faturamento_Batch_009.json")
-                .status("Sucesso")
-                .totalLinhas(2)
-                .linhasSucesso(2)
-                .linhasErro(0)
-                .timestampInicio(OffsetDateTime.parse("2026-05-25T14:30:00-03:00"))
-                .timestampFim(OffsetDateTime.parse("2026-05-25T14:35:00-03:00"))
-                .build();
-        task2 = rpaTaskRepository.save(task2);
-        
-        rpaSubtaskRepository.save(RpaSubtask.builder()
-                .id(UUID.randomUUID())
-                .task(task2)
-                .nome("Venda 1024")
-                .status("Sucesso")
-                .numeroDocumento("NF-1024")
-                .dataEmissao(LocalDate.of(2026, 5, 25))
-                .valorTotalDocumento(new BigDecimal("250.00"))
-                .nomeFornecedor("Cliente Final Consumidor")
-                .build());
-                
-        rpaSubtaskRepository.save(RpaSubtask.builder()
-                .id(UUID.randomUUID())
-                .task(task2)
-                .nome("Venda 1025")
-                .status("Sucesso")
-                .numeroDocumento("NF-1025")
-                .dataEmissao(LocalDate.of(2026, 5, 25))
-                .valorTotalDocumento(new BigDecimal("1200.50"))
-                .nomeFornecedor("Cliente Final Consumidor")
-                .build());
+        // Let's add an XYZ execution task & subtasks (identificador_rpa = rpa_sja_004) directly using jdbcTemplate
+        UUID task2Id = UUID.fromString("8c14f09d-cb25-451e-b83c-1df52345e672");
+        jdbcTemplate.update(
+            "INSERT INTO rpa_sja_004_task (id, id_cadastro_rpa, nome, caminho_json_disco, status, total_linhas, linhas_sucesso, linhas_erro, linhas_nao_encontrado, timestamp_inicio, timestamp_fim) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            task2Id, rpaXyz1.getId(), "Faturamento_Batch_009.json", "/data/mock/faturamento.json", "Sucesso", 2, 2, 0, 0,
+            OffsetDateTime.parse("2026-05-25T14:30:00-03:00"), OffsetDateTime.parse("2026-05-25T14:35:00-03:00")
+        );
+
+        jdbcTemplate.update(
+            "INSERT INTO rpa_sja_004_subtask (id, id_task, nome, status, numero_documento, data_emissao, valor_total_documento, nome_fornecedor) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            UUID.randomUUID(), task2Id, "Venda 1024", "Sucesso", "NF-1024", LocalDate.of(2026, 5, 25), new BigDecimal("250.00"), "Cliente Final Consumidor"
+        );
+
+        jdbcTemplate.update(
+            "INSERT INTO rpa_sja_004_subtask (id, id_task, nome, status, numero_documento, data_emissao, valor_total_documento, nome_fornecedor) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            UUID.randomUUID(), task2Id, "Venda 1025", "Sucesso", "NF-1025", LocalDate.of(2026, 5, 25), new BigDecimal("1200.50"), "Cliente Final Consumidor"
+        );
     }
 
     private void insertAuthUser(UUID id, String email, String password) {
@@ -395,5 +388,44 @@ public class DatabaseSeeder implements CommandLineRunner {
             "INSERT INTO auth.users (id, email, encrypted_password, role, created_at) VALUES (?, ?, ?, ?, NOW())",
             id, email, hashedPassword, "authenticated"
         );
+    }
+
+    private void createDynamicTables(String ident) {
+        String taskTable = ident + "_task";
+        String subtaskTable = ident + "_subtask";
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + taskTable + " (" +
+                "id UUID PRIMARY KEY, " +
+                "id_cadastro_rpa UUID, " +
+                "nome VARCHAR(255) NOT NULL, " +
+                "caminho_json_disco VARCHAR(512), " +
+                "timestamp_inicio TIMESTAMP WITH TIME ZONE DEFAULT NOW(), " +
+                "timestamp_fim TIMESTAMP WITH TIME ZONE, " +
+                "status VARCHAR(50) DEFAULT 'Processando', " +
+                "msg_erro TEXT, " +
+                "total_linhas INT DEFAULT 0, " +
+                "linhas_sucesso INT DEFAULT 0, " +
+                "linhas_erro INT DEFAULT 0, " +
+                "linhas_nao_encontrado INT DEFAULT 0, " +
+                "criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()" +
+                ")");
+                
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + subtaskTable + " (" +
+                "id UUID PRIMARY KEY, " +
+                "id_task UUID REFERENCES " + taskTable + "(id) ON DELETE CASCADE, " +
+                "nome VARCHAR(255), " +
+                "status VARCHAR(50) NOT NULL, " +
+                "msg_erro TEXT, " +
+                "numero_documento VARCHAR(50), " +
+                "serie_documento VARCHAR(20), " +
+                "data_emissao DATE, " +
+                "valor_total_documento NUMERIC(15, 2), " +
+                "codigo_fornecedor VARCHAR(50), " +
+                "nome_fornecedor VARCHAR(255), " +
+                "criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW()" +
+                ")");
+        } catch (Exception e) {
+            System.err.println("Error creating dynamic tables in seeder: " + e.getMessage());
+        }
     }
 }

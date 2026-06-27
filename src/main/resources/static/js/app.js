@@ -314,6 +314,45 @@ function bootstrapApp() {
     const defaultScreen = session.role === 'admin' ? 'dash-admin' : 'meus-rpas';
     window.location.hash = '#/' + defaultScreen;
   }
+
+  // Initialize WebSocket for real-time updates
+  if (!window.isWebSocketInitialized) {
+    window.isWebSocketInitialized = true;
+    initWebSocket();
+  }
+}
+
+function initWebSocket() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}/ws/execucoes`;
+  const socket = new WebSocket(wsUrl);
+
+  socket.onmessage = function(event) {
+    console.log("WebSocket message received:", event.data);
+    if (event.data === "update") {
+      const activeScreen = document.querySelector('.screen.active');
+      if (activeScreen) {
+        const screenId = activeScreen.id.replace('screen-', '');
+        if (screenId === 'resultados') {
+          loadExecutions();
+        } else if (screenId === 'dash-admin') {
+          loadAdminDashboard();
+        } else if (screenId === 'meus-rpas') {
+          loadClientDashboard();
+        }
+      }
+    }
+  };
+
+  socket.onclose = function() {
+    console.warn("WebSocket closed. Reconnecting in 5 seconds...");
+    setTimeout(initWebSocket, 5000);
+  };
+  
+  socket.onerror = function(err) {
+    console.error("WebSocket error:", err);
+    socket.close();
+  };
 }
 
 // Router config
@@ -590,10 +629,10 @@ function navigateToScreen(id, params) {
   else if (id === 'alertas') loadAlertasView();
   else if (id === 'resultados') {
     loadResultadosView();
-    // Poll for updates every 3 seconds while on the Resultados screen
+    // Poll for updates every 10 minutes while on the Resultados screen (fallback to WebSocket)
     window.resultadosPollIntervalId = setInterval(() => {
       loadExecutions();
-    }, 3000);
+    }, 600000); // 10 minutes
   }
 }
 
@@ -1105,8 +1144,10 @@ function renderClientDashboardData(data) {
         ${r.status === 'Ativo' ? '<span class="glow-dot"></span>Ativo' : r.status}
       </span>
       <div style="display:flex;gap:6px;">
-        <button class="btn btn-ghost btn-sm" onclick="go('alertas')"><i class="ti ti-bell"></i></button>
-        <button class="btn btn-ghost btn-sm" onclick="openRpaReport('${r.id}')"><i class="ti ti-chart-bar"></i></button>
+        <button class="btn btn-success-ghost btn-sm" onclick="event.stopPropagation(); executarRpaAgora('${r.id}')" title="Executar agora" style="color:var(--color-success); border-color:rgba(46,204,113,0.2);"><i class="ti ti-player-play"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); abrirModalAgendamentos('${r.id}', '${r.nome.replaceAll("'", "\\'")}')" title="Agendamentos"><i class="ti ti-clock"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); go('alertas')"><i class="ti ti-bell"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); openRpaReport('${r.id}')"><i class="ti ti-chart-bar"></i></button>
       </div>
     `;
     rows.appendChild(row);
@@ -1414,8 +1455,16 @@ function renderExecutionsData(data) {
         const subForn = sub.nomeFornecedor || 'N/A';
         const subDoc = sub.numeroDocumento || 'N/A';
         
+        let chkHtml = '';
+        if (sub.status === 'Erro' || sub.status === 'Não Encontrado') {
+          chkHtml = `<input type="checkbox" class="subtask-reprocess-chk-${t.id}" data-subtask-id="${sub.id}" data-doc="${subDoc}" onclick="event.stopPropagation();" style="width:16px; height:16px; cursor:pointer; vertical-align:middle;">`;
+        } else {
+          chkHtml = `<input type="checkbox" disabled style="width:16px; height:16px; opacity:0.25; cursor:not-allowed; vertical-align:middle;">`;
+        }
+
         subtasksTableRowsHtml += `
           <tr style="border-bottom:1px solid rgba(0,0,0,0.05); background: transparent;">
+            <td style="padding:8px; text-align:center;">${chkHtml}</td>
             <td style="padding:8px;">${sub.nome || '—'}</td>
             <td style="padding:8px;"><strong>${subDoc}</strong></td>
             <td style="padding:8px;">${sub.dataEmissao || '—'}</td>
@@ -1436,22 +1485,28 @@ function renderExecutionsData(data) {
     } else {
       subtasksTableRowsHtml = `
         <tr>
-          <td colspan="8" style="text-align:center; color:var(--color-text-muted); padding:12px;">
+          <td colspan="9" style="text-align:center; color:var(--color-text-muted); padding:12px;">
             Nenhuma subtask registrada para esta execução.
           </td>
         </tr>
       `;
     }
 
+    let reprocessBtnHtml = '';
+    if (t.status !== 'Processando') {
+      reprocessBtnHtml = `<button class="btn btn-primary btn-xs" onclick="event.stopPropagation(); reprocessarSubtasksSelecionadas('${t.id}', '${t.cadastroRpaId}', '${t.caminhoPlanilha || ''}')" style="margin-left: 15px; padding: 3px 10px; font-size: 11px;"><i class="ti ti-rotate-clockwise"></i> Reprocessar Notas Selecionadas</button>`;
+    }
+
     subtr.innerHTML = `
       <td colspan="5" style="padding:16px 24px; background: var(--color-bg-surface-light); border-top: 1px inset var(--color-border); border-bottom: 1px inset var(--color-border);">
-        <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
-          Itens Processados (Subtasks)
+        <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; display:flex; align-items:center;">
+          Itens Processados (Subtasks) ${reprocessBtnHtml}
         </div>
         <div class="table-wrap" style="box-shadow: none; border: 1px solid var(--color-border); margin: 0; background: var(--color-card);">
           <table style="width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: var(--color-bg-surface); border-bottom: 2px solid var(--color-border);">
+                <th style="padding:8px; font-size:12px; text-align:center; width: 40px;">Sel</th>
                 <th style="padding:8px; font-size:12px; text-align:left;">Item</th>
                 <th style="padding:8px; font-size:12px; text-align:left;">Documento</th>
                 <th style="padding:8px; font-size:12px; text-align:left;">Emissão</th>
@@ -1823,4 +1878,229 @@ function copyCredentials() {
   
   const text = `Cliente: ${company}\nUsername (Webhook ID): ${user}\nPassword (Secret): ${pass}\nWebhook Endpoint: ${url}`;
   navigator.clipboard.writeText(text).then(() => alert("Dados de conexão copiados para a área de transferência!"));
+}
+
+/* ═════════════════════════════════════════════════════════════
+   7. RPA SCHEDULER & REPROCESS EVENT HANDLERS
+   ═════════════════════════════════════════════════════════════ */
+const MOCK_JOBS_KEY = "op_mock_jobs";
+
+function getMockJobs() {
+  return JSON.parse(localStorage.getItem(MOCK_JOBS_KEY)) || [];
+}
+
+function saveMockJobs(jobs) {
+  localStorage.setItem(MOCK_JOBS_KEY, JSON.stringify(jobs));
+}
+
+function executarRpaAgora(rpaId) {
+  if (!confirm("Deseja iniciar a execução deste RPA imediatamente?")) return;
+
+  if (isMockMode()) {
+    alert("Simulação: Comando de execução imediata registrado com sucesso!");
+    return;
+  }
+
+  fetch(`/api/rpas/${rpaId}/executar`, { method: 'POST' })
+    .then(res => {
+      if (res.ok) {
+        alert("Comando enviado! O robô iniciará a execução em instantes.");
+        go('resultados');
+      } else {
+        alert("Erro ao enviar comando de execução.");
+      }
+    })
+    .catch(err => {
+      console.error("Erro ao disparar RPA agora:", err);
+      alert("Erro ao tentar conectar ao servidor.");
+    });
+}
+
+function abrirModalAgendamentos(rpaId, rpaNome) {
+  document.getElementById('m-cron-rpa-id').value = rpaId;
+  document.getElementById('m-cron-rpa-nome').textContent = rpaNome;
+  document.getElementById('m-cron-expression').value = '';
+  document.getElementById('m-cron-status').value = 'ativo';
+  
+  loadAgendamentos(rpaId);
+  document.getElementById('modal-agendamentos').classList.add('open');
+}
+
+function loadAgendamentos(rpaId) {
+  const container = document.getElementById('cron-list-container');
+  container.innerHTML = '<div style="text-align:center; padding:10px; color:var(--color-text-muted);">Carregando agendamentos...</div>';
+
+  if (isMockMode()) {
+    const jobs = getMockJobs().filter(j => j.cadastroRpaId === rpaId);
+    renderAgendamentosList(jobs);
+    return;
+  }
+
+  fetch(`/api/jobs-rpa?rpaId=${rpaId}`)
+    .antigravityJson()
+    .then(jobs => {
+      renderAgendamentosList(jobs);
+    })
+    .catch(err => {
+      console.error("Erro ao carregar agendamentos:", err);
+      container.innerHTML = '<div style="color:var(--color-danger); text-align:center; padding:10px;">Erro ao carregar agendamentos do servidor.</div>';
+    });
+}
+
+function renderAgendamentosList(jobs) {
+  const container = document.getElementById('cron-list-container');
+  container.innerHTML = '';
+  
+  if (jobs.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--color-text-muted); font-size:var(--fs-sm);">Nenhum agendamento cron configurado para este robô.</div>';
+    return;
+  }
+
+  jobs.forEach(j => {
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'space-between';
+    div.style.padding = '8px 10px';
+    div.style.borderBottom = '1px solid var(--color-border)';
+    div.style.fontSize = 'var(--fs-sm)';
+
+    const isAtivo = (j.status === 'ativo' || j.status === 'Ativo');
+    const badgeHtml = `<span class="badge ${isAtivo ? 'badge-success' : 'badge-danger'}" style="padding: 2px 6px; font-size: 10px;">${j.status}</span>`;
+
+    div.innerHTML = `
+      <div>
+        <code style="font-size: 12.5px; font-weight: 600; color: var(--color-primary-light);">${j.cronExpression}</code>
+        <span style="margin-left: 8px;">${badgeHtml}</span>
+      </div>
+      <button class="btn btn-danger-ghost btn-xs" onclick="event.stopPropagation(); deleteCronJob('${j.id}', '${j.cadastroRpaId || j.rpaId}')" style="padding: 3px 6px;"><i class="ti ti-trash"></i></button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function deleteCronJob(jobId, rpaId) {
+  if (!confirm("Deseja remover este agendamento cron?")) return;
+
+  if (isMockMode()) {
+    const jobs = getMockJobs().filter(j => j.id !== jobId);
+    saveMockJobs(jobs);
+    loadAgendamentos(rpaId);
+    return;
+  }
+
+  fetch(`/api/jobs-rpa/${jobId}`, { method: 'DELETE' })
+    .then(res => {
+      if (res.ok) {
+        loadAgendamentos(rpaId);
+      } else {
+        alert("Erro ao excluir agendamento.");
+      }
+    })
+    .catch(err => {
+      console.error("Erro ao deletar job cron:", err);
+      alert("Erro de conexão ao excluir agendamento.");
+    });
+}
+
+function submitCronJob() {
+  const rpaId = document.getElementById('m-cron-rpa-id').value;
+  const expr = document.getElementById('m-cron-expression').value.trim();
+  const status = document.getElementById('m-cron-status').value;
+
+  if (!expr) {
+    alert("Por favor, digite uma expressão cron.");
+    return;
+  }
+
+  if (isMockMode()) {
+    const jobs = getMockJobs();
+    const newJob = {
+      id: "mock-job-" + Date.now(),
+      cadastroRpaId: rpaId,
+      rpaId: rpaId,
+      cronExpression: expr,
+      status: status
+    };
+    jobs.push(newJob);
+    saveMockJobs(jobs);
+    
+    document.getElementById('m-cron-expression').value = '';
+    loadAgendamentos(rpaId);
+    return;
+  }
+
+  fetch('/api/jobs-rpa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      clientId: session.clientId,
+      cadastroRpaId: rpaId,
+      cronExpression: expr,
+      status: status
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      document.getElementById('m-cron-expression').value = '';
+      loadAgendamentos(rpaId);
+    } else {
+      res.json().then(data => {
+        alert(data.message || "Erro ao salvar agendamento.");
+      }).catch(() => alert("Erro ao salvar agendamento."));
+    }
+  })
+  .catch(err => {
+    console.error("Erro ao criar job cron:", err);
+    alert("Erro de rede ao salvar agendamento.");
+  });
+}
+
+function reprocessarSubtasksSelecionadas(taskId, rpaId, caminhoPlanilha) {
+  const chks = document.querySelectorAll(`.subtask-reprocess-chk-${taskId}:checked`);
+  if (chks.length === 0) {
+    alert("Selecione ao menos uma nota com erro ou não encontrada para reprocessar.");
+    return;
+  }
+
+  const subtaskIds = [];
+  const documentos = [];
+
+  chks.forEach(cb => {
+    subtaskIds.push(cb.getAttribute('data-subtask-id'));
+    documentos.push(cb.getAttribute('data-doc'));
+  });
+
+  if (!confirm(`Deseja enviar ${documentos.length} nota(s) para reprocessamento no RPA?`)) return;
+
+  if (isMockMode()) {
+    alert(`Simulação: ${documentos.length} notas enviadas para reprocessamento offline!`);
+    chks.forEach(cb => { cb.checked = false; });
+    return;
+  }
+
+  fetch('/api/rpas/reprocessar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cadastroRpaId: rpaId,
+      taskId: taskId,
+      caminhoPlanilha: caminhoPlanilha,
+      subtaskIds: subtaskIds,
+      documentos: documentos
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      alert("Comando de reprocessamento enviado com sucesso! O robô reprocessará estas notas em instantes.");
+      chks.forEach(cb => { cb.checked = false; });
+      loadExecutions();
+    } else {
+      alert("Erro ao disparar reprocessamento.");
+    }
+  })
+  .catch(err => {
+    console.error("Erro ao enviar reprocessamento:", err);
+    alert("Erro de rede ao enviar reprocessamento.");
+  });
 }

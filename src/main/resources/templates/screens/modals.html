@@ -197,8 +197,42 @@
       <div id="detail-task-content"></div>
       <div id="detail-custom-content"></div>
 
-      <div class="modal-footer" style="border-top:1px solid var(--color-border); padding-top:14px; margin-top:20px;">
-        <button class="btn btn-primary" onclick="fecharModal('modal-resultado-detalhe')">Fechar Detalhes</button>
+    </div>
+  </div>
+
+  <!-- MODAL: AGENDAMENTOS (CRON) -->
+  <div class="modal-overlay" id="modal-agendamentos">
+    <div class="modal" style="width:580px; max-height:85vh; overflow-y:auto;">
+      <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--color-border); padding-bottom:12px; margin-bottom:16px;">
+        <span style="display:flex; align-items:center; gap:8px;"><i class="ti ti-clock" style="color:var(--color-primary-lilac); font-size:22px;"></i> Agendamentos do RPA</span>
+        <button class="btn btn-ghost btn-sm" onclick="fecharModal('modal-agendamentos')" style="padding:4px 8px;"><i class="ti ti-x"></i></button>
+      </div>
+      <input type="hidden" id="m-cron-rpa-id">
+      
+      <div style="font-weight:600; font-size:var(--fs-sm); margin-bottom:6px;" id="m-cron-rpa-nome">—</div>
+      
+      <div style="max-height: 200px; overflow-y: auto; margin: 15px 0; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-base); background: var(--color-bg-surface-light);" id="cron-list-container">
+        <!-- Cron list populated dynamically -->
+      </div>
+
+      <hr>
+      <div style="font-size:var(--fs-sm); font-weight:600; color:var(--color-primary-light); margin-bottom:10px;"><i class="ti ti-plus" style="vertical-align:-2px; margin-right:5px;"></i>Novo Agendamento</div>
+      <div class="grid2">
+        <div class="field">
+          <div class="field-label">Expressão Cron *</div>
+          <input type="text" id="m-cron-expression" placeholder="Ex: 0 */10 * * * * (A cada 10 min)">
+        </div>
+        <div class="field">
+          <div class="field-label">Status *</div>
+          <select id="m-cron-status" style="height:38px;">
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding-top:14px; margin-top:20px; border-top:1px solid var(--color-border);">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-agendamentos')">Fechar</button>
+        <button class="btn btn-primary" onclick="submitCronJob()"><i class="ti ti-device-floppy"></i> Salvar Agendamento</button>
       </div>
     </div>
   </div>

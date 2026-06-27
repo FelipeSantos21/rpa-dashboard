@@ -30,6 +30,10 @@ public class RpaSubtask {
     @Column(name = "msg_erro", columnDefinition = "TEXT")
     private String msgErro;
     
+    @Column(name = "reprocessar")
+    @Builder.Default
+    private Boolean reprocessar = false;
+    
     // Business Data (ERP)
     @Column(name = "numero_documento")
     private String numeroDocumento;

@@ -103,7 +103,7 @@ public class CoreOperationsTests {
         seededRpa = CadastroRpa.builder()
                 .cliente(seededCliente)
                 .nome("Base RPA")
-                .identificadorRpa("rpa_base_001")
+                .identificadorRpa("rpa_sja_001")
                 .status("Ativo")
                 .build();
         seededRpa = cadastroRpaRepository.save(seededRpa);
